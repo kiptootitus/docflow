@@ -1,0 +1,21 @@
+{
+  "name": "docflow-ai",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "web",
+    "mobile"
+  ],
+  "scripts": {
+    "dev:web": "cd web && npm run dev",
+    "dev:mobile": "cd mobile && npx expo start",
+    "build:web": "cd web && npm run build",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5"
+  }
+}
