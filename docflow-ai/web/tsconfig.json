@@ -9,11 +9,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "skipLibCheck": true
+    }
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
