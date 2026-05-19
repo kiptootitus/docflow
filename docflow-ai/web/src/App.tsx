@@ -1,3 +1,4 @@
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -9,6 +10,8 @@ import RegisterPage from "@/pages/RegisterPage";
 import DashboardPage from "@/pages/DashboardPage";
 import InvoicesPage from "@/pages/InvoicesPage";
 import InvoiceEditorPage from "@/pages/InvoiceEditorPage";
+import QuotationsPage from "@/pages/QuotationsPage";
+import QuotationEditorPage from "@/pages/QuotationEditorPage"; // 👈 1. IMPORT YOUR DETAILS INPUT COMPONENT HERE
 import ContractsPage from "@/pages/ContractsPage";
 import AiReviewPage from "@/pages/AiReviewPage";
 import ClientsPage from "@/pages/ClientsPage";
@@ -52,9 +55,19 @@ export default function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
+
+            {/* Invoices Engine */}
             <Route path="invoices" element={<InvoicesPage />} />
             <Route path="invoices/new" element={<InvoiceEditorPage />} />
             <Route path="invoices/:id/edit" element={<InvoiceEditorPage />} />
+
+            {/* Quotations Engine */}
+            <Route path="quotations" element={<QuotationsPage />} />
+            {/* 👇 2. ADD THESE TWO NEW ENTRY FORM ROUTE MOUNT WINDOWS HERE */}
+            <Route path="quotations/new" element={<QuotationEditorPage />} />
+            <Route path="quotations/:id/edit" element={<QuotationEditorPage />} />
+
+            {/* Core Workspace Assets */}
             <Route path="contracts" element={<ContractsPage />} />
             <Route path="clients" element={<ClientsPage />} />
             <Route path="ai-review" element={<AiReviewPage />} />
@@ -62,6 +75,7 @@ export default function App() {
             <Route path="billing" element={<BillingPage />} />
           </Route>
 
+          {/* Catch-all Global Redirect */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>

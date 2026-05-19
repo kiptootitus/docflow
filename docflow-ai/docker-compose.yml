@@ -1,9 +1,9 @@
 version: "3.9"
 
 services:
-  # ──────────────────────────────────────────
-  # PostgreSQL Database
-  # ──────────────────────────────────────────
+  # ----------------------------
+  # POSTGRES DATABASE
+  # ----------------------------
   db:
     image: postgres:16-alpine
     container_name: docflow_db
@@ -11,12 +11,12 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-docflow}
       POSTGRES_USER: ${POSTGRES_USER:-docflow}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docflow_secret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docflow254}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5433:5432"   # ← Changed from 5432:5432 to 5433:5432
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-docflow}"]
       interval: 10s
@@ -25,54 +25,41 @@ services:
     networks:
       - docflow_network
 
-  # ──────────────────────────────────────────
-  # Redis (Broker + Cache)
-  # ──────────────────────────────────────────
+  # ----------------------------
+  # REDIS
+  # ----------------------------
   redis:
     image: redis:7-alpine
     container_name: docflow_redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secret}
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secret_strong_password_2026}
     volumes:
       - redis_data:/data
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-redis_secret}", "ping"]
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-redis_secret_strong_password_2026}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - docflow_network
 
-  # ──────────────────────────────────────────
-  # Django Backend
-  # ──────────────────────────────────────────
+  # ----------------------------
+  # DJANGO BACKEND
+  # ----------------------------
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: docflow_backend
     restart: unless-stopped
-    command: gunicorn docflow.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120
+    command: gunicorn docflow.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile -
+    env_file: .env
     environment:
-      - DJANGO_SETTINGS_MODULE=docflow.settings.production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-docflow}:${POSTGRES_PASSWORD:-docflow_secret}@db:5432/${POSTGRES_DB:-docflow}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
-      - DEBUG=${DEBUG:-False}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME:-docflow-media}
-      - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME:-us-east-1}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      DJANGO_SETTINGS_MODULE: docflow.settings
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
     volumes:
       - ./backend:/app
       - media_data:/app/media
@@ -87,27 +74,21 @@ services:
     networks:
       - docflow_network
 
-  # ──────────────────────────────────────────
-  # Celery Worker
-  # ──────────────────────────────────────────
+  # ----------------------------
+  # CELERY WORKER
+  # ----------------------------
   celery_worker:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: docflow_celery_worker
+    container_name: docflow_celery
     restart: unless-stopped
     command: celery -A docflow worker --loglevel=info --concurrency=4
+    env_file: .env
     environment:
-      - DJANGO_SETTINGS_MODULE=docflow.settings.production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-docflow}:${POSTGRES_PASSWORD:-docflow_secret}@db:5432/${POSTGRES_DB:-docflow}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME:-docflow-media}
+      DJANGO_SETTINGS_MODULE: docflow.settings
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
     volumes:
       - ./backend:/app
       - media_data:/app/media
@@ -119,21 +100,21 @@ services:
     networks:
       - docflow_network
 
-  # ──────────────────────────────────────────
-  # Celery Beat (Scheduler)
-  # ──────────────────────────────────────────
+  # ----------------------------
+  # CELERY BEAT
+  # ----------------------------
   celery_beat:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: docflow_celery_beat
+    container_name: docflow_beat
     restart: unless-stopped
     command: celery -A docflow beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file: .env
     environment:
-      - DJANGO_SETTINGS_MODULE=docflow.settings.production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-docflow}:${POSTGRES_PASSWORD:-docflow_secret}@db:5432/${POSTGRES_DB:-docflow}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      DJANGO_SETTINGS_MODULE: docflow.settings
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
     volumes:
       - ./backend:/app
     depends_on:
@@ -144,41 +125,40 @@ services:
     networks:
       - docflow_network
 
-  # ──────────────────────────────────────────
-  # Flower (Celery Monitor)
-  # ──────────────────────────────────────────
+  # ----------------------------
+  # FLOWER (CELERY MONITOR)
+  # ----------------------------
   flower:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: docflow_flower
     restart: unless-stopped
-    command: celery -A docflow flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
+    command: celery -A docflow flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+    env_file: .env
     environment:
-      - DJANGO_SETTINGS_MODULE=docflow.settings.production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-docflow}:${POSTGRES_PASSWORD:-docflow_secret}@db:5432/${POSTGRES_DB:-docflow}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      DJANGO_SETTINGS_MODULE: docflow.settings
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
     ports:
       - "5555:5555"
     depends_on:
-      - celery_worker
-      - redis
+      celery_worker:
+        condition: service_started
     networks:
       - docflow_network
 
-  # ──────────────────────────────────────────
-  # React Web Frontend (Dev)
-  # ──────────────────────────────────────────
-  web:
+  # ----------------------------
+  # REACT FRONTEND (FIXED NAME)
+  # ----------------------------
+  frontend:
     build:
       context: ./web
       dockerfile: Dockerfile.dev
-    container_name: docflow_web
+    container_name: docflow_frontend
     restart: unless-stopped
+    env_file: .env
     environment:
-      - VITE_API_URL=http://localhost:8000
-      - VITE_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      VITE_API_URL: http://localhost:8000
     volumes:
       - ./web:/app
       - /app/node_modules
@@ -187,9 +167,9 @@ services:
     networks:
       - docflow_network
 
-  # ──────────────────────────────────────────
-  # Nginx Reverse Proxy
-  # ──────────────────────────────────────────
+  # ----------------------------
+  # NGINX
+  # ----------------------------
   nginx:
     image: nginx:alpine
     container_name: docflow_nginx
@@ -204,16 +184,22 @@ services:
       - "443:443"
     depends_on:
       - backend
-      - web
+      - frontend
     networks:
       - docflow_network
 
+# ----------------------------
+# VOLUMES
+# ----------------------------
 volumes:
   postgres_data:
   redis_data:
   media_data:
   static_data:
 
+# ----------------------------
+# NETWORK
+# ----------------------------
 networks:
   docflow_network:
     driver: bridge

@@ -9,3 +9,30 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+@media print {
+  /* Hide the rest of the application interface entirely when printing */
+  aside,
+  header,
+  nav,
+  .print\:hidden,
+  button {
+    display: none !important;
+  }
+
+  body,
+  #root,
+  main {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Expand document layout sheet to take maximum page dimensions */
+  .max-w-3xl {
+    max-w: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+}

@@ -7,14 +7,14 @@ import { formatCurrency, formatDate, STATUS_COLORS, cn } from "@/lib/utils";
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: React.ElementType; color: string }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500 font-medium">{label}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+    <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">{label}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1 truncate">{value}</p>
         </div>
-        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", color)}>
-          <Icon className="w-6 h-6" />
+        <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0", color)}>
+          <Icon className="w-5 h-5 sm:w-6 h-6" />
         </div>
       </div>
     </div>
@@ -42,26 +42,26 @@ export default function DashboardPage() {
   const totalPending = pending.reduce((sum, i) => sum + parseFloat(i.total_amount), 0);
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             Welcome back, {user?.first_name} 👋
           </h1>
-          <p className="text-gray-500 mt-1">Here's your business overview</p>
+          <p className="text-sm text-gray-500 mt-1">Here's your business overview</p>
         </div>
         <Link
           to="/invoices/new"
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm"
+          className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm w-full sm:w-auto shadow-sm"
         >
           <Plus className="w-4 h-4" />
           New Invoice
         </Link>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      {/* Stats - Grid layout adapts based on mobile, tablet, and desktop screens */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
         <StatCard
           label="Total Revenue"
           value={formatCurrency(totalRevenue, company?.default_currency)}
@@ -88,32 +88,36 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Recent Invoices */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Recent Invoices</h2>
+      {/* Recent Invoices Container */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-900 text-sm sm:text-base">Recent Invoices</h2>
           <Link to="/invoices" className="text-sm text-indigo-600 hover:underline font-medium">
             View all
           </Link>
         </div>
-        <div className="divide-y divide-gray-50">
+
+        <div className="divide-y divide-gray-50 overflow-x-auto">
           {invoices.slice(0, 8).map((invoice) => (
-            <div key={invoice.id} className="flex items-center px-6 py-4 hover:bg-gray-50 transition-colors">
+            <div key={invoice.id} className="flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors min-w-[500px] sm:min-w-0">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">{invoice.number}</p>
-                <p className="text-xs text-gray-500">{invoice.client_name ?? "No client"}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{invoice.number}</p>
+                <p className="text-xs text-gray-500 truncate">{invoice.client_name ?? "No client"}</p>
               </div>
-              <div className="text-right mr-6">
+              <div className="text-right mx-4">
                 <p className="text-sm font-semibold text-gray-900">
                   {formatCurrency(invoice.total_amount, invoice.currency)}
                 </p>
               </div>
-              <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full capitalize mr-4", STATUS_COLORS[invoice.status])}>
-                {invoice.status}
-              </span>
-              <p className="text-xs text-gray-400 w-24 text-right">{formatDate(invoice.created_at)}</p>
+              <div className="flex items-center gap-4">
+                <span className={cn("text-[11px] sm:text-xs font-medium px-2.5 py-1 rounded-full capitalize text-center min-w-[70px]", STATUS_COLORS[invoice.status])}>
+                  {invoice.status}
+                </span>
+                <p className="text-xs text-gray-400 w-20 text-right">{formatDate(invoice.created_at)}</p>
+              </div>
             </div>
           ))}
+
           {invoices.length === 0 && (
             <div className="px-6 py-12 text-center">
               <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />

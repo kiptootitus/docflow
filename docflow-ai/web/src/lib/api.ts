@@ -9,9 +9,9 @@ export const api: AxiosInstance = axios.create({
 
 // Attach token to every request
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("access_token"); // 👈 Pulls your active token
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`; // 👈 Injects it seamlessly
   }
   return config;
 });
@@ -40,7 +40,7 @@ api.interceptors.response.use(
   }
 );
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 
 export interface User {
   id: string;
@@ -152,7 +152,34 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-// ── API Calls ──────────────────────────────────────────────────────────────
+export interface Quotation {
+  id: string;
+  company: string;
+  client: string;
+  client_name: string;
+  number: string;
+  title?: string;
+  status: "draft" | "sent" | "viewed" | "accepted" | "declined" | "expired";
+  currency: string;
+  issue_date: string;
+  expiry_date: string | null;
+  notes: string;
+  terms: string;
+  subtotal: string;
+  tax_rate: string;
+  tax_amount: string;
+  discount_amount: string;
+  total_amount: string;
+  portal_url: string;
+  line_items: Array<{
+    description: string;
+    quantity: number;
+    unit_price: string;
+    amount: string;
+  }>;
+}
+
+// -- API Calls --------------------------------------------------------------
 
 export const authApi = {
   register: (data: { email: string; first_name: string; last_name: string; password: string; password_confirm: string }) =>
@@ -171,11 +198,35 @@ export const companiesApi = {
   update: (id: string, data: Partial<Company>) => api.patch<Company>(`/companies/${id}/`, data),
   stats: (id: string) => api.get(`/companies/${id}/stats/`),
   clients: {
-    list: (companyId?: string) => api.get<PaginatedResponse<Client>>(`/companies/clients/${companyId ? `?company=${companyId}` : ""}`),
-    create: (data: Partial<Client>) => api.post<Client>("/companies/clients/", data),
-    update: (id: string, data: Partial<Client>) => api.patch<Client>(`/companies/clients/${id}/`, data),
-    delete: (id: string) => api.delete(`/companies/clients/${id}/`),
+    // Exact structural mapping to matching Swagger entries with explicit trailing slashes
+    list: (companyId?: string) =>
+      api.get<PaginatedResponse<Client>>(`/companies/clients/${companyId ? `?company=${companyId}` : ""}`),
+    create: (data: Partial<Client>) =>
+      api.post<Client>("/companies/clients/", data), // 👈 Restored & fixed with trailing slash
+    update: (id: string, data: Partial<Client>) =>
+      api.patch<Client>(`/companies/clients/${id}/`, data),
+    delete: (id: string) =>
+      api.delete(`/companies/clients/${id}/`),
   },
+};
+
+export const quotationsApi = {
+  list: (params?: Record<string, any>) =>
+    api.get<{ count: number; results: Quotation[] }>("/documents/quotations/", { params }),
+  get: (id: string) =>
+    api.get<Quotation>(`/documents/quotations/${id}/`),
+  create: (data: Partial<Quotation>) =>
+    api.post<Quotation>("/documents/quotations/", data),
+  update: (id: string, data: Partial<Quotation>) =>
+    api.put<Quotation>(`/documents/quotations/${id}/`, data),
+  delete: (id: string) =>
+    api.delete(`/documents/quotations/${id}/`),
+  send: (id: string) =>
+    api.post(`/documents/quotations/${id}/send/`),
+  duplicate: (id: string) =>
+    api.post<Quotation>(`/documents/quotations/${id}/duplicate/`),
+  convertToInvoice: (id: string) =>
+    api.post<{ id: string }>(`/documents/quotations/${id}/convert-to-invoice/`),
 };
 
 export const invoicesApi = {
