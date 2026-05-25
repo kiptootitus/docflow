@@ -60,3 +60,4 @@ gunicorn
 pytest
 pytest-django
 coverage
+dj-rest-auth[with_social]

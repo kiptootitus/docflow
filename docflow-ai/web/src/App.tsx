@@ -7,11 +7,13 @@ import { useAuthStore } from "@/lib/auth-store";
 // Pages
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage"; // 👈 Added recovery request page
+import PasswordResetConfirmPage from "@/pages/PasswordResetConfirmPage"; // 👈 Added credential confirm page
 import DashboardPage from "@/pages/DashboardPage";
 import InvoicesPage from "@/pages/InvoicesPage";
 import InvoiceEditorPage from "@/pages/InvoiceEditorPage";
 import QuotationsPage from "@/pages/QuotationsPage";
-import QuotationEditorPage from "@/pages/QuotationEditorPage"; // 👈 1. IMPORT YOUR DETAILS INPUT COMPONENT HERE
+import QuotationEditorPage from "@/pages/QuotationEditorPage";
 import ContractsPage from "@/pages/ContractsPage";
 import AiReviewPage from "@/pages/AiReviewPage";
 import ClientsPage from "@/pages/ClientsPage";
@@ -42,6 +44,11 @@ export default function App() {
           {/* Public */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+
+          {/* 👇 PASSWORD RECOVERY FLOW PUBLIC ENDPOINTS */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/password-reset/confirm/:uid/:token" element={<PasswordResetConfirmPage />} />
+
           <Route path="/portal/:token" element={<ClientPortalPage />} />
 
           {/* Protected */}
@@ -63,7 +70,6 @@ export default function App() {
 
             {/* Quotations Engine */}
             <Route path="quotations" element={<QuotationsPage />} />
-            {/* 👇 2. ADD THESE TWO NEW ENTRY FORM ROUTE MOUNT WINDOWS HERE */}
             <Route path="quotations/new" element={<QuotationEditorPage />} />
             <Route path="quotations/:id/edit" element={<QuotationEditorPage />} />
 

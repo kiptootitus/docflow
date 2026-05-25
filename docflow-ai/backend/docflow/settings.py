@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_spectacular',
+    'rest_framework.authtoken',
+
     'django_filters',
     'django_extensions',
     'django_celery_beat',
@@ -63,6 +65,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',  # if using Google login
     'djoser',
     'django_otp',
     'anymail',

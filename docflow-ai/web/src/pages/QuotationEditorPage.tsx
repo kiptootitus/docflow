@@ -4,8 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Trash2, Save, Building2, Phone, User, Globe } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, User, Eye, LayoutGrid, Sparkles, MapPin, Building2 } from "lucide-react";
 import { companiesApi, quotationsApi } from "@/lib/api";
+import { formatCurrency, cn } from "@/lib/utils";
 
 const lineItemSchema = z.object({
   description: z.string().min(1, "Description required"),
@@ -15,19 +16,25 @@ const lineItemSchema = z.object({
 });
 
 const quotationSchema = z.object({
-  company: z.string().min(1, "Company required"),
-  client: z.string().min(1, "Client required"),
+  company: z.string().optional(),
+  client: z.string().optional(),
   salutation: z.string().default("Mr."),
   client_phone: z.string().min(1, "Phone number required"),
   building_address: z.string().min(1, "Building address required"),
   currency: z.string().default("KES"),
   issue_date: z.string().min(1),
+  validity_period: z.string().default("30"),
   due_date: z.string().min(1),
   notes: z.string().optional(),
   terms: z.string().optional(),
-  tax_rate: z.coerce.number().default(16),
-  discount_amount: z.coerce.number().default(0),
   line_items: z.array(lineItemSchema).min(1, "Add at least one item line"),
+
+  // Fixed: Raw manual text override collectors (Bypasses backend persistence mandates)
+  raw_client_name: z.string().optional(),
+  raw_company_name: z.string().optional(),
+  raw_company_address: z.string().optional(),
+  raw_company_city: z.string().optional(),
+  raw_company_location_number: z.string().optional(),
 });
 
 type QuotationFormValues = z.infer<typeof quotationSchema>;
@@ -39,6 +46,11 @@ export default function QuotationEditorPage() {
   const queryClient = useQueryClient();
   const isEditing = Boolean(id);
   const aiPrefillData = location.state?.prefill;
+
+  const [previewMode, setPreviewMode] = useState<"editor" | "split">("split");
+
+  const [isManualCompany, setIsManualCompany] = useState(false);
+  const [isManualClient, setIsManualClient] = useState(false);
 
   const { data: companiesData } = useQuery({ queryKey: ["companies"], queryFn: () => companiesApi.list() });
   const company = companiesData?.data?.results?.[0];
@@ -56,24 +68,56 @@ export default function QuotationEditorPage() {
     enabled: isEditing,
   });
 
-  const { register, control, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<QuotationFormValues>({
+  const { register, control, handleSubmit, watch, reset, setValue } = useForm<QuotationFormValues>({
     resolver: zodResolver(quotationSchema),
     defaultValues: {
       company: company?.id ?? "",
       salutation: "Mr.",
       currency: company?.default_currency ?? "KES",
       issue_date: new Date().toISOString().split("T")[0],
+      validity_period: "30",
       due_date: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
-      tax_rate: 16,
-      discount_amount: 0,
       line_items: [{ description: "", quantity: 1, unit_price: 0, order: 0 }],
     },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "line_items" });
+
+  const selectedClientId = watch("client");
   const watchedItems = watch("line_items") || [];
-  const taxRate = watch("tax_rate") || 0;
-  const discountAmount = watch("discount_amount") || 0;
+  const currencySymbol = watch("currency") || "KES";
+  const notesText = watch("notes");
+  const termsText = watch("terms");
+  const issueDateWatch = watch("issue_date");
+  const validityPeriodWatch = watch("validity_period");
+
+
+  const manualClientName = watch("raw_client_name");
+  const manualCompanyName = watch("raw_company_name");
+  const manualCompanyAddress = watch("raw_company_address");
+  const manualCompanyCity = watch("raw_company_city");
+  const manualLocationNumber = watch("raw_company_location_number");
+
+  useEffect(() => {
+    if (issueDateWatch && validityPeriodWatch) {
+      const baseDate = new Date(issueDateWatch);
+      const daysOffset = parseInt(validityPeriodWatch, 10);
+      if (!isNaN(daysOffset)) {
+        baseDate.setDate(baseDate.getDate() + daysOffset);
+        setValue("due_date", baseDate.toISOString().split("T")[0]);
+      }
+    }
+  }, [issueDateWatch, validityPeriodWatch, setValue]);
+
+  useEffect(() => {
+    if (selectedClientId && clients.length > 0 && !isManualClient) {
+      const match = clients.find(c => c.id === selectedClientId);
+      if (match) {
+        if (match.phone) setValue("client_phone", match.phone);
+        if (match.address) setValue("building_address", match.address);
+      }
+    }
+  }, [selectedClientId, clients, isManualClient, setValue]);
 
   useEffect(() => {
     if (company && !isEditing) {
@@ -83,209 +127,291 @@ export default function QuotationEditorPage() {
   }, [company, isEditing, setValue]);
 
   useEffect(() => {
-    if (aiPrefillData) {
-      if (aiPrefillData.line_items) setValue("line_items", aiPrefillData.line_items);
-      if (aiPrefillData.notes) setValue("notes", aiPrefillData.notes);
-    }
-  }, [aiPrefillData, setValue]);
-
-  useEffect(() => {
     if (quoteData?.data) {
       reset(quoteData.data as any);
     }
   }, [quoteData, reset]);
 
-  const subtotal = watchedItems.reduce((sum, item) => sum + ((item?.quantity || 0) * (item?.unit_price || 0)), 0);
-  const taxAmount = subtotal * (taxRate / 100);
-  const totalAmount = subtotal + taxAmount - discountAmount;
+  useEffect(() => {
+    if (aiPrefillData && !isEditing) {
+      if (aiPrefillData.extracted_company_name) {
+        setIsManualCompany(true);
+        setValue("raw_company_name", aiPrefillData.extracted_company_name);
+      }
+      if (aiPrefillData.extracted_company_address) setValue("raw_company_address", aiPrefillData.extracted_company_address);
+      if (aiPrefillData.extracted_company_city) setValue("raw_company_city", aiPrefillData.extracted_company_city);
+      if (aiPrefillData.extracted_company_location_number) setValue("raw_company_location_number", aiPrefillData.extracted_company_location_number);
+      if (aiPrefillData.extracted_salutation) setValue("salutation", aiPrefillData.extracted_salutation);
 
-  // 👇 FIXED: Added missing useMutation pipeline logic back into component
+      if (aiPrefillData.extracted_client_name) {
+        setIsManualClient(true);
+        setValue("raw_client_name", aiPrefillData.extracted_client_name);
+      }
+
+      if (aiPrefillData.extracted_currency) {
+        setValue("currency", aiPrefillData.extracted_currency);
+      }
+
+      if (Array.isArray(aiPrefillData.extracted_items) && aiPrefillData.extracted_items.length > 0) {
+        setValue("line_items", aiPrefillData.extracted_items.map((item: any, idx: number) => ({
+          description: item.description || "Parsed Estimate Item",
+          quantity: Number(item.quantity) || 1,
+          unit_price: Number(item.unit_price) || 0,
+          order: idx
+        })));
+      }
+    }
+  }, [aiPrefillData, isEditing, setValue]);
+
+  const totalAmount = watchedItems.reduce((sum, item) => sum + ((item?.quantity || 0) * (item?.unit_price || 0)), 0);
+
   const saveMutation = useMutation({
     mutationFn: (values: QuotationFormValues) => {
       const payload = {
         ...values,
-        subtotal: String(subtotal),
-        tax_amount: String(taxAmount),
-        total_amount: String(totalAmount),
-        number: quoteData?.data?.number ?? `QT-${Math.floor(1000 + Math.random() * 9000)}`,
-        status: quoteData?.data?.status ?? "draft",
-        line_items: values.line_items.map((item, index) => ({
-          ...item,
-          order: index,
-          unit_price: String(item.unit_price)
-        }))
+        company: isManualCompany ? null : values.company,
+        client: isManualClient ? null : values.client,
+        subtotal: String(totalAmount.toFixed(2)),
+        tax_amount: "0.00",
+        total_amount: String(totalAmount.toFixed(2)),
       };
-      return isEditing ? quotationsApi.update(id!, payload as any) : quotationsApi.create(payload as any);
+      return quotationsApi.create(payload as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotations"] });
       navigate("/quotations");
-    },
-    onError: (err: any) => {
-      alert(`Failed to save quote: ${err.response?.data?.detail || "Check form parameters."}`);
     }
   });
 
   return (
-    <div className="p-4 sm:p-8 max-w-4xl mx-auto bg-gray-50/50 min-h-screen">
-      {/* Header Panel */}
-      <div className="flex items-center justify-between gap-4 mb-8 bg-white p-6 rounded-2xl border border-gray-100 shadow-xs">
-        <div className="flex items-center gap-4">
-          <button type="button" onClick={() => navigate("/quotations")} className="p-2.5 hover:bg-gray-50 text-gray-500 rounded-xl border border-gray-100 transition-all">
+    <div className="p-4 sm:p-6 max-w-[1700px] mx-auto bg-gray-50/30 min-h-screen font-sans text-slate-800">
+
+      {/* Title block */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={() => navigate("/quotations")} className="p-2 hover:bg-gray-50 text-gray-500 rounded-xl transition-all">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-              {isEditing ? "Modify Quotation" : "Create New Proposal"}
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              {isEditing ? "Edit Quotation" : "Create Proposal Estimate"}
+              {aiPrefillData && <span className="text-[10px] bg-amber-50 text-amber-800 font-bold uppercase tracking-wider px-2 py-0.5 border border-amber-200 rounded-md flex items-center gap-0.5"><Sparkles className="w-3 h-3 text-amber-500" /> AI Populated</span>}
             </h1>
-            <p className="text-gray-400 text-xs sm:text-sm mt-0.5">Draft technical estimates and client structural scope targets.</p>
+            <p className="text-gray-400 text-xs">Direct flat rate structural engine baseline.</p>
           </div>
         </div>
 
-        {/* Company Active Branding Icon */}
-        <div className="flex items-center gap-3 border-l border-gray-100 pl-6">
-          {company?.logo ? (
-            <img src={company.logo} alt="Logo" className="w-12 h-12 rounded-xl object-contain border border-gray-100" />
-          ) : (
-            <div className="w-12 h-12 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-sm">
-              {company?.name ? company.name[0].toUpperCase() : "D"}
-            </div>
-          )}
-          <div className="hidden sm:block text-left">
-            <p className="font-bold text-gray-900 text-sm">{company?.name || "DocFlow Provider"}</p>
-            <p className="text-[11px] font-semibold text-indigo-600 tracking-wide uppercase">{company?.city || "Nairobi"}</p>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-gray-100 p-0.5 rounded-xl border border-gray-200/40">
+            <button type="button" onClick={() => setPreviewMode("editor")} className={cn("flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all", previewMode === "editor" ? "bg-white text-gray-900 shadow-xs" : "text-gray-400 hover:text-gray-700")}>
+              <LayoutGrid className="w-3.5 h-3.5" /> Core Form
+            </button>
+            <button type="button" onClick={() => setPreviewMode("split")} className={cn("flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all", previewMode === "split" ? "bg-white text-gray-900 shadow-xs" : "text-gray-400 hover:text-gray-700")}>
+              <Eye className="w-3.5 h-3.5" /> Split Preview
+            </button>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit((data) => saveMutation.mutate(data))} className="space-y-6">
-        {/* Client & Metadata Info Card */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs space-y-6">
-          <h3 className="font-bold text-gray-900 text-sm sm:text-base flex items-center gap-2 pb-3 border-b border-gray-50">
-            <User className="w-4 h-4 text-indigo-500" /> Client Profile & Scope Settings
-          </h3>
+      <div className={cn("grid grid-cols-1 gap-6 transition-all duration-300", previewMode === "split" ? "xl:grid-cols-2" : "max-w-4xl mx-auto")}>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Salutation</label>
-              <select {...register("salutation")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all">
-                <option value="Mr.">Mr. (Mister)</option>
-                <option value="Mrs.">Mrs. (Mistress)</option>
-                <option value="Ms.">Ms. (Miss)</option>
-                <option value="Dr.">Dr. (Doctor)</option>
-                <option value="Prof.">Prof. (Professor)</option>
-              </select>
+        {/* INPUT FORM BLOCK */}
+        <form onSubmit={handleSubmit((data) => saveMutation.mutate(data))} className="space-y-6">
+
+          {/* Issuing company control override block panel */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+              <h3 className="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-indigo-600" /> Quotation Provider Identity
+              </h3>
+              <button type="button" onClick={() => setIsManualCompany(!isManualCompany)} className="text-[11px] font-bold text-indigo-600 hover:underline bg-indigo-50 px-2 py-1 rounded">
+                {isManualCompany ? "Use Saved Database Profile" : "Type Dynamic Company Info (No Save)"}
+              </button>
             </div>
 
-            <div className="sm:col-span-2">
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Target Client Assignee</label>
-              <select {...register("client")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all">
-                <option value="">Select a customer profile</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              {errors.client && <p className="text-red-500 text-xs mt-1">{errors.client.message}</p>}
-            </div>
+            {isManualCompany ? (
+              <div className="space-y-3 animate-fade-in">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Company Name Override</label>
+                  <input type="text" {...register("raw_company_name")} placeholder="e.g. Acme Tech Solutions" className="w-full text-xs border border-gray-200 rounded-xl p-2.5 focus:border-indigo-500 bg-white" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="text" {...register("raw_company_address")} placeholder="Street / Building Address" className="w-full text-xs border border-gray-200 rounded-xl p-2.5" />
+                  <input type="text" {...register("raw_company_city")} placeholder="City" className="w-full text-xs border border-gray-200 rounded-xl p-2.5" />
+                </div>
+                <input type="text" {...register("raw_company_location_number")} placeholder="Location / Contact Phone Number" className="w-full text-xs border border-gray-200 rounded-xl p-2.5" />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Active Company Profile</label>
+                <select {...register("company")} className="w-full border border-gray-200 rounded-xl p-2.5 text-xs bg-white">
+                  <option value={company?.id}>{company?.name || "System Core Corporate Profile"}</option>
+                </select>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                <Phone className="w-3 h-3 text-gray-400" /> Contact Phone Number
-              </label>
-              <input type="text" {...register("client_phone")} placeholder="e.g. +254 705 830228" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white" />
-              {errors.client_phone && <p className="text-red-500 text-xs mt-1">{errors.client_phone.message}</p>}
+          {/* Client Target Assignee Field Override block */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+              <h3 className="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
+                <User className="w-4 h-4 text-violet-600" /> Target Assignee
+              </h3>
+              <button type="button" onClick={() => setIsManualClient(!isManualClient)} className="text-[11px] font-bold text-violet-600 hover:underline bg-violet-50 px-2 py-1 rounded">
+                {isManualClient ? "Pick Saved Profile" : "Type Custom Customer Directly"}
+              </button>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                <Building2 className="w-3 h-3 text-gray-400" /> Building & Corporate Address
-              </label>
-              <input type="text" {...register("building_address")} placeholder="e.g. Suite 4B, Delta Towers, Westlands" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white" />
-              {errors.building_address && <p className="text-red-500 text-xs mt-1">{errors.building_address.message}</p>}
-            </div>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Prefix</label>
+                <select {...register("salutation")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+                  {["Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Messrs."].map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div>
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                <Globe className="w-3 h-3 text-gray-400" /> Currency
-              </label>
-              <select {...register("currency")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all">
-                {["KES", "USD", "EUR", "GBP"].map(curr => <option key={curr} value={curr}>{curr}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Issue Date</label>
-              <input type="date" {...register("issue_date")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white" />
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Validity Expiry Date</label>
-              <input type="date" {...register("due_date")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all bg-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Line Items Array */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs">
-          <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-4 flex items-center gap-2">
-            Items Distribution Pricing
-          </h3>
-
-          <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-gray-50/50 p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-all">
-                <div className="w-full sm:flex-1">
-                  <input {...register(`line_items.${index}.description` as const)} placeholder="Task line item description..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all" />
-                </div>
-                <div className="w-full sm:w-24">
-                  <input type="number" {...register(`line_items.${index}.quantity` as const)} placeholder="Qty" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-center" />
-                </div>
-                <div className="w-full sm:w-36">
-                  <input type="number" step="0.01" {...register(`line_items.${index}.unit_price` as const)} placeholder="Unit Price" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-right" />
-                </div>
-                {fields.length > 1 && (
-                  <button type="button" onClick={() => remove(index)} className="p-2 text-gray-400 hover:text-red-500 rounded-lg self-end sm:self-auto hover:bg-red-50 transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+              <div className="sm:col-span-2">
+                {isManualClient ? (
+                  <div className="animate-fade-in">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">One-Off Unsaved Customer Name</label>
+                    <input type="text" {...register("raw_client_name")} placeholder="Type custom representative name..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white" />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Client Account</label>
+                    <select {...register("client")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+                      <option value="">Choose a customer profile...</option>
+                      {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
                 )}
               </div>
-            ))}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Contact Phone</label>
+                <input type="text" {...register("client_phone")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Corporate/Building Address</label>
+                <input type="text" {...register("building_address")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Currency Code</label>
+                <select {...register("currency")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+                  {["KES", "USD", "EUR", "GBP"].map(curr => <option key={curr} value={curr}>{curr}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Issue Date</label>
+                <input type="date" {...register("issue_date")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Validity Period</label>
+                <select {...register("validity_period")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
+                  <option value="7">7 Days Validity</option>
+                  <option value="15">15 Days Validity</option>
+                  <option value="30">30 Days Validity</option>
+                  <option value="60">60 Days Validity</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <button type="button" onClick={() => append({ description: "", quantity: 1, unit_price: 0, order: fields.length })} className="mt-4 inline-flex items-center gap-2 text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-4 py-2 rounded-xl transition-colors">
-            <Plus className="w-3.5 h-3.5" /> Add New Item Breakdown
-          </button>
-        </div>
+          {/* Pricing Items Matrices distribution rows configuration section */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
+            <h3 className="font-bold text-slate-800 text-xs sm:text-sm mb-3">Line Pricing Items</h3>
+            <div className="space-y-3">
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex flex-col sm:flex-row items-center gap-3 bg-slate-50/50 p-3 rounded-xl border border-gray-100">
+                  <input {...register(`line_items.${index}.description` as const)} placeholder="Item description breakdown..." className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm bg-white" />
+                  <input type="number" {...register(`line_items.${index}.quantity` as const)} placeholder="Qty" className="w-full sm:w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center bg-white" />
+                  <input type="number" step="0.01" {...register(`line_items.${index}.unit_price` as const)} placeholder="Price" className="w-full sm:w-32 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-right bg-white" />
+                  {fields.length > 1 && (
+                    <button type="button" onClick={() => remove(index)} className="p-1.5 text-gray-400 hover:text-rose-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={() => append({ description: "", quantity: 1, unit_price: 0, order: fields.length })} className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Add Row
+            </button>
+          </div>
 
-        {/* Global summary and adjustments calculation blocks */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">VAT Tax Multiplier (%)</label>
-            <input type="number" step="0.01" {...register("tax_rate")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none bg-white transition-all" />
+          <div className="bg-slate-900 rounded-2xl p-5 text-white flex justify-between items-center shadow-md">
+            <div>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Combined Total Summary</p>
+              <h2 className="text-2xl font-black text-indigo-400">{currencySymbol} {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+            </div>
+            <button type="submit" disabled={saveMutation.isPending} className="bg-indigo-600 hover:bg-indigo-500 font-bold text-xs text-white px-6 py-3.5 rounded-xl flex items-center gap-1.5">
+              <Save className="w-4 h-4" /> Save Proposal
+            </button>
           </div>
-          <div>
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Discount Value Deduction Amount</label>
-            <input type="number" step="0.01" {...register("discount_amount")} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none bg-white transition-all" />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Proposal Terms & Custom Conditions Notes</label>
-            <textarea {...register("notes")} rows={3} placeholder="Add payment milestones or terms validation statements..." className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none bg-white resize-none transition-all" />
-          </div>
-        </div>
+        </form>
 
-        {/* Submission Bottom Actions Bar */}
-        <div className="bg-gradient-to-r from-gray-900 to-slate-800 rounded-2xl p-6 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-md">
-          <div>
-            <p className="text-xs text-slate-400 font-semibold tracking-wide uppercase">Calculated Proposal Value</p>
-            <h2 className="text-2xl sm:text-3xl font-black text-indigo-400 tracking-tight mt-0.5">
-              {watch("currency")} {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h2>
+        {/* RE-RENDER SPLIT LIVE PREVIEW BLOCK CANVAS */}
+        {previewMode === "split" && (
+          <div className="hidden xl:block sticky top-6 self-start bg-white rounded-3xl border border-gray-200 p-8 shadow-md text-xs text-slate-700 min-h-[700px] flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-start border-b border-gray-100 pb-6 mb-6">
+                <div className="space-y-2.5">
+                  <div className="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-sm">
+                    {(manualCompanyName || company?.name || "D")[0]}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{manualCompanyName || company?.name || "DocFlow Provider"}</h4>
+                    <p className="text-gray-400 text-[11px] font-medium flex items-center gap-0.5">
+                      <MapPin className="w-3 h-3 text-slate-300" /> {manualCompanyAddress || company?.address_line1 || "Nairobi, Kenya"} {manualCompanyCity && `, ${manualCompanyCity}`}
+                    </p>
+                    {manualLocationNumber && <p className="text-[10px] text-slate-400 font-mono">📞 {manualLocationNumber}</p>}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <h2 className="text-xl font-black text-indigo-600 uppercase tracking-tight">ESTIMATE STATEMENT</h2>
+                  <p className="font-mono text-gray-400 font-bold text-sm">QT-{new Date().getFullYear()}-DYNAMIC</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-xl border border-gray-100 mb-6">
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Quotation Target Representative</p>
+                <p className="text-sm font-bold text-slate-900 mt-1">
+                  {watch("salutation")} {isManualClient ? (manualClientName || <span className="text-slate-300 italic">Untitled Custom Buyer</span>) : (clients.find(c => c.id === selectedClientId)?.name || <span className="text-slate-300 italic">Unassigned Account</span>)}
+                </p>
+              </div>
+
+              <table className="w-full text-left border-collapse mb-6">
+                <thead>
+                  <tr className="bg-slate-900 text-white text-[9px] uppercase font-bold tracking-wider">
+                    <th className="p-2.5 rounded-tl-lg w-3/5">Task Description</th>
+                    <th className="p-2.5 text-center w-1/5">Qty</th>
+                    <th className="p-2.5 text-right rounded-tr-lg w-1/5">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 font-medium">
+                  {watchedItems.map((item, i) => (
+                    <tr key={i} className="text-slate-800 text-[11px]">
+                      <td className="p-2.5 text-slate-600 truncate max-w-[250px] font-semibold">{item.description || <span className="text-gray-300 italic">Untitled Task Item</span>}</td>
+                      <td className="p-2.5 text-center font-mono text-gray-400">{item.quantity || 0}</td>
+                      <td className="p-2.5 text-right text-slate-900 font-bold">{formatCurrency((item.quantity || 0) * (item.unit_price || 0), currencySymbol)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end border-t border-gray-100 pt-4">
+              <div className="w-52 text-right bg-slate-50 p-2 rounded-lg text-sm font-black text-slate-900 flex justify-between">
+                <span>Total Budgeted Value</span>
+                <span className="text-indigo-600">{formatCurrency(totalAmount, currencySymbol)}</span>
+              </div>
+            </div>
           </div>
-          <button type="submit" disabled={saveMutation.isPending} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3.5 rounded-xl transition-all disabled:opacity-50 shadow-sm active:scale-98">
-            <Save className="w-4 h-4" /> {saveMutation.isPending ? "Saving Proposal Data..." : "Save Proposal Quotation"}
-          </button>
-        </div>
-      </form>
+        )}
+      </div>
     </div>
   );
 }

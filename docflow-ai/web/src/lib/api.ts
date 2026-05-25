@@ -181,6 +181,8 @@ export interface Quotation {
 
 // -- API Calls --------------------------------------------------------------
 
+// -- API Calls (api.ts) --------------------------------------------------------------
+
 export const authApi = {
   register: (data: { email: string; first_name: string; last_name: string; password: string; password_confirm: string }) =>
     api.post<{ user: User; tokens: { access: string; refresh: string } }>("/auth/register/", data),
@@ -189,8 +191,15 @@ export const authApi = {
   logout: (refresh: string) => api.post("/auth/logout/", { refresh }),
   me: () => api.get<User>("/auth/me/"),
   updateMe: (data: Partial<User>) => api.patch<User>("/auth/me/", data),
-};
 
+  // 👇 ADDED NEW FUNCTIONALITIES HERE
+  googleLogin: (accessTokenOrCode: string) =>
+    api.post<{ access: string; refresh: string }>("/auth/google/", { access_token: accessTokenOrCode }),
+  requestPasswordReset: (email: string) =>
+    api.post("/auth/password-reset/", { email }),
+  confirmPasswordReset: (data: Record<string, string>) =>
+    api.post("/auth/password-reset/confirm/", data),
+};
 export const companiesApi = {
   list: () => api.get<PaginatedResponse<Company>>("/companies/"),
   get: (id: string) => api.get<Company>(`/companies/${id}/`),

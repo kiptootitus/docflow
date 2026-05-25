@@ -6,62 +6,67 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-CONTRACT_REVIEW_PROMPT = """You are a legal document analyst. Review the following contract text and identify:
-1. Legal risks or problematic clauses
-2. Missing standard clauses
-3. Compliance issues
-4. Suggestions for improvement
+# Core Business Automation Prompts
+CONTRACT_REVIEW_PROMPT = """You are an automated document parsing engine. Review the text or document schema and identify standard parameters.
+Return a JSON object matching this exact structure:
+{{
+  "findings": [
+    {{
+      "type": "risk|suggestion|compliant|note",
+      "severity": "high|medium|low",
+      "title": "Short title",
+      "description": "Detailed explanation",
+      "clause_reference": "Section reference",
+      "recommendation": "Suggested action"
+    }}
+  ],
+  "extracted_company_name": "",
+  "extracted_company_address": "",
+  "extracted_company_city": "",
+  "extracted_company_location_number": "",
+  "extracted_salutation": "Mr.",
+  "extracted_client_name": "",
+  "extracted_currency": "KES",
+  "extracted_items": []
+}}
+Return ONLY valid JSON matching this schema, no extra chat text.
 
-Return a JSON array of findings with this exact structure:
-[
-  {
-    "type": "risk|suggestion|compliant|note",
-    "severity": "high|medium|low",
-    "title": "Short title",
-    "description": "Detailed explanation",
-    "clause_reference": "Section X.X (if applicable)",
-    "recommendation": "What to do about it"
-  }
-]
-
-Return ONLY the JSON array, no other text.
-
-Contract text:
+Document Text:
 {text}"""
 
-DOCUMENT_GENERATION_PROMPTS = {
-    "nda": """Generate a professional Non-Disclosure Agreement with the following details:
-Party A (Disclosing): {party_a}
-Party B (Receiving): {party_b}
-Effective Date: {effective_date}
-Duration: {duration}
-Jurisdiction: {jurisdiction}
-Purpose: {purpose}
+DOCUMENT_EXTRACTION_PROMPT = """You are an AI document builder. Analyze the text payload and execute user instructions: {instructions}
 
-Generate a complete, legally sound NDA in plain text format suitable for immediate use.""",
+Isolate pricing structures, corporate entities, identifiers, logos, descriptions, and line entries.
+Return a JSON object with this structure:
+{{
+  "findings": [
+    {{
+      "type": "note",
+      "severity": "low",
+      "title": "AI Extraction Successful",
+      "description": "Processed text structure for direct document configuration."
+    }}
+  ],
+  "extracted_company_name": "Name of the issuing company or seller entity",
+  "extracted_company_address": "Street address or postal box details",
+  "extracted_company_city": "City name",
+  "extracted_company_location_number": "Phone number or registration/location number",
+  "extracted_salutation": "Mr.|Mrs.|Ms.|Dr.|Prof.|Messrs.",
+  "extracted_client_name": "Target buyer name or client entity representative",
+  "extracted_currency": "Three-letter currency code (e.g., KES, USD, EUR, GBP)",
+  "extracted_items": [
+    {{
+      "description": "Detailed task description line item breakdown text",
+      "quantity": 1,
+      "unit_price": 0.00
+    }}
+  ]
+}}
 
-    "service": """Generate a Professional Services Agreement with:
-Service Provider: {provider_name}
-Client: {client_name}
-Services: {services_description}
-Start Date: {start_date}
-End Date: {end_date}
-Payment: {payment_terms}
-Jurisdiction: {jurisdiction}
+Return ONLY the raw JSON object, no introductory or conversational prose.
 
-Include sections for: Scope of Work, Payment Terms, IP ownership, Confidentiality, Termination, Dispute Resolution.""",
-
-    "freelance": """Generate a Freelance Contract with:
-Freelancer: {freelancer_name}
-Client: {client_name}
-Project: {project_description}
-Rate: {rate}
-Estimated Duration: {duration}
-Deliverables: {deliverables}
-Jurisdiction: {jurisdiction}
-
-Include standard freelance contract sections.""",
-}
+Document Text:
+{text}"""
 
 
 class AIProvider:
@@ -72,42 +77,38 @@ class AIProvider:
         self.openai_key = settings.OPENAI_API_KEY
         self.primary_model = settings.AI_MODEL_PRIMARY
 
-    def review_contract(self, text: str) -> dict:
-        """Review contract text and return structured findings."""
-        prompt = CONTRACT_REVIEW_PROMPT.format(text=text[:15000])  # Limit context
+    def review_contract(self, text: str, instructions: Optional[str] = None) -> dict:
+        """Review text context streams or extract direct commercial entities using user directives."""
+        if instructions and any(kw in instructions.lower() for kw in ["quote", "quotation", "invoice", "extract", "billing", "generate"]):
+            prompt = DOCUMENT_EXTRACTION_PROMPT.format(instructions=instructions, text=text[:15000])
+        else:
+            prompt = CONTRACT_REVIEW_PROMPT.format(text=text[:15000])
 
         try:
             result = self._call_anthropic(prompt)
-            findings = json.loads(result["content"])
-            return {"findings": findings, "model": result["model"], "tokens": result["tokens"]}
+            data = json.loads(result["content"])
         except Exception as e:
-            logger.warning(f"Claude failed, trying OpenAI: {e}")
+            logger.warning(f"Claude fallback engine activated: {e}")
             try:
                 result = self._call_openai(prompt)
-                findings = json.loads(result["content"])
-                return {"findings": findings, "model": result["model"], "tokens": result["tokens"]}
+                data = json.loads(result["content"])
             except Exception as e2:
-                logger.error(f"Both AI providers failed: {e2}")
+                logger.error(f"AI Extraction processing failed: {e2}")
                 raise
 
-    def generate_document(self, doc_type: str, fields: dict) -> dict:
-        """Generate a document from a template and fields."""
-        template = DOCUMENT_GENERATION_PROMPTS.get(doc_type)
-        if not template:
-            raise ValueError(f"Unknown document type: {doc_type}")
-
-        try:
-            prompt = template.format(**fields)
-        except KeyError as e:
-            raise ValueError(f"Missing required field: {e}")
-
-        try:
-            result = self._call_anthropic(prompt, max_tokens=4000)
-            return {"content": result["content"], "model": result["model"], "tokens": result["tokens"]}
-        except Exception as e:
-            logger.warning(f"Claude failed: {e}")
-            result = self._call_openai(prompt, max_tokens=4000)
-            return {"content": result["content"], "model": result["model"], "tokens": result["tokens"]}
+        return {
+            "findings": data.get("findings", []),
+            "extracted_company_name": data.get("extracted_company_name", ""),
+            "extracted_company_address": data.get("extracted_company_address", ""),
+            "extracted_company_city": data.get("extracted_company_city", ""),
+            "extracted_company_location_number": data.get("extracted_company_location_number", ""),
+            "extracted_salutation": data.get("extracted_salutation", "Mr."),
+            "extracted_client_name": data.get("extracted_client_name", ""),
+            "extracted_currency": data.get("extracted_currency", "KES"),
+            "extracted_items": data.get("extracted_items", []),
+            "model": result["model"],
+            "tokens": result["tokens"]
+        }
 
     def _call_anthropic(self, prompt: str, max_tokens: int = 2000) -> dict:
         import anthropic
@@ -128,7 +129,7 @@ class AIProvider:
         client = OpenAI(api_key=self.openai_key)
         response = client.chat.completions.create(
             model="gpt-4o",
-            max_tokens=max_tokens,
+            max_digits=max_tokens,
             messages=[{"role": "user", "content": prompt}],
         )
         return {
@@ -138,5 +139,4 @@ class AIProvider:
         }
 
 
-# Singleton
 ai_provider = AIProvider()

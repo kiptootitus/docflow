@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Users } from "lucide-react";
-import { companiesApi } from "@/lib/api";
+import { Plus, Pencil, Trash2, Users, Building2, Loader2 } from "lucide-react";
+import { api } from "@/lib/api";
 import type { Client } from "@/lib/api";
 
 export default function ClientsPage() {
@@ -10,18 +10,43 @@ export default function ClientsPage() {
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "" });
 
-  const { data: companiesData } = useQuery({ queryKey: ["companies"], queryFn: () => companiesApi.list() });
+  // Onboarding company form tracking states
+  const [newCompanyName, setNewCompanyName] = useState("");
+  const [newCompanyEmail, setNewCompanyEmail] = useState("");
+
+  // 1. Fetch Companies - Force the trailing slash explicitly with "/" instead of ""
+  const { data: companiesData, isLoading: isLoadingCompany } = useQuery({
+    queryKey: ["companies"],
+    queryFn: () => api.get("/")
+  });
+
   const company = companiesData?.data?.results?.[0];
 
-  const { data, isLoading } = useQuery({
+  // 2. Fetch Clients - Targets GET /api/v1/clients/
+  const { data, isLoading: isLoadingClients } = useQuery({
     queryKey: ["clients", company?.id],
-    queryFn: () => companiesApi.clients.list(company?.id),
+    queryFn: () => api.get("/clients/"),
     enabled: Boolean(company?.id),
   });
   const clients = data?.data?.results ?? [];
 
+  // Mutation to create a company profile hitting the exact backend root path: POST /api/v1/
+  const createCompanyMutation = useMutation({
+    mutationFn: (payload: { name: string; email: string }) => api.post("/", payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["companies"] });
+      setNewCompanyName("");
+      setNewCompanyEmail("");
+    },
+    onError: (err: any) => {
+      console.error(err);
+      alert(`Error creating business workspace: ${err.response?.data?.detail || "Please check validation rules."}`);
+    }
+  });
+
+  // Client Mutations pointing directly to the /clients/ endpoint route layout
   const createMutation = useMutation({
-    mutationFn: (newClient: Omit<Client, "id">) => companiesApi.clients.create(newClient),
+    mutationFn: (newClient: Omit<Client, "id">) => api.post("/clients/", newClient),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["clients"] });
       setShowForm(false);
@@ -33,7 +58,7 @@ export default function ClientsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (updatedData: Partial<Client>) => companiesApi.clients.update(editing!.id, updatedData),
+    mutationFn: (updatedData: Partial<Client>) => api.put(`/clients/${editing!.id}/`, updatedData),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["clients"] });
       setEditing(null);
@@ -45,7 +70,7 @@ export default function ClientsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => companiesApi.clients.delete(id),
+    mutationFn: (id: string) => api.delete(`/clients/${id}/`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["clients"] }),
   });
 
@@ -56,31 +81,101 @@ export default function ClientsPage() {
   };
 
   const handleFormSubmit = () => {
-  if (!form.name || !form.email) {
-    alert("Name and Email are required fields.");
-    return;
+    if (!form.name || !form.email) {
+      alert("Name and Email are required fields.");
+      return;
+    }
+
+    if (!company?.id) {
+      alert("System could not verify your business identity. Please ensure workspace setup is complete.");
+      return;
+    }
+
+    if (editing) {
+      updateMutation.mutate(form);
+    } else {
+      createMutation.mutate({
+        ...form,
+        company: company.id
+      });
+    }
+  };
+
+  // Sync Loading state context wrapper
+  if (isLoadingCompany || (company?.id && isLoadingClients)) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+        <p className="text-gray-500 text-sm font-medium">Syncing profile accounts...</p>
+      </div>
+    );
   }
 
-  if (editing) {
-    updateMutation.mutate(form);
-  } else {
-    // If company database query hasn't finished loading or is empty, fallback gracefully
-    const targetCompanyId = company?.id || "00000000-0000-0000-0000-000000000000";
+  // Workspace Setup Fallback Form View
+  if (!company) {
+    return (
+      <div className="max-w-md mx-auto mt-16 p-6 bg-white border border-gray-100 rounded-2xl shadow-sm text-center">
+        <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <Building2 className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-gray-900">Create your Business Profile</h2>
+        <p className="text-gray-500 text-sm mt-1 mb-6">
+          Before adding clients, you need to create a profile space for your company identity.
+        </p>
+        <div className="space-y-4 text-left">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Company / Trading Name
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Acme Corp"
+              value={newCompanyName}
+              onChange={(e) => setNewCompanyName(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            />
+          </div>
 
-    createMutation.mutate({
-      ...form,
-      company: targetCompanyId
-    });
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Business Email Address
+            </label>
+            <input
+              type="email"
+              placeholder="e.g. billing@acme.com"
+              value={newCompanyEmail}
+              onChange={(e) => setNewCompanyEmail(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              if (!newCompanyName.trim() || !newCompanyEmail.trim()) {
+                return alert("Please fill out both Name and Email fields.");
+              }
+              createCompanyMutation.mutate({
+                name: newCompanyName,
+                email: newCompanyEmail,
+              });
+            }}
+            disabled={createCompanyMutation.isPending}
+            className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-xs transition-colors disabled:opacity-50 mt-2"
+          >
+            {createCompanyMutation.isPending ? "Creating Space..." : "Set Up Workspace"}
+          </button>
+        </div>
+      </div>
+    );
   }
-};
 
+  // Primary Working Interface Layout Presenter
   return (
     <div className="p-4 sm:p-8">
-      {/* Header Panel Layout */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Clients</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{clients.length} clients</p>
+          <p className="text-gray-500 text-sm mt-0.5">{clients.length} clients registered under {company.name}</p>
         </div>
         <button
           onClick={() => { setEditing(null); setForm({ name: "", email: "", phone: "", address: "" }); setShowForm(true); }}
@@ -90,7 +185,7 @@ export default function ClientsPage() {
         </button>
       </div>
 
-      {/* Form Modal Backdrop Context */}
+      {/* Entry Modal Overlay Form Component */}
       {(showForm || editing) && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6 border border-gray-100 max-h-[90vh] overflow-y-auto">
@@ -133,7 +228,7 @@ export default function ClientsPage() {
         </div>
       )}
 
-      {/* Client List Grid Layout Context */}
+      {/* Cards Client Entries Presentation Layer */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {clients.map((c) => (
           <div key={c.id} className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 shadow-sm group hover:border-gray-200 transition-all">
@@ -147,7 +242,6 @@ export default function ClientsPage() {
                 {c.phone && <p className="text-xs sm:text-sm text-gray-400 mt-0.5 truncate">{c.phone}</p>}
               </div>
 
-              {/* Responsive Option Controls */}
               <div className="flex gap-0.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                 <button
                   onClick={() => openEdit(c)}
@@ -169,8 +263,8 @@ export default function ClientsPage() {
         ))}
       </div>
 
-      {/* Empty State Presentation Template View */}
-      {clients.length === 0 && !isLoading && (
+      {/* Empty Fallback Block view */}
+      {clients.length === 0 && (
         <div className="text-center bg-white border border-gray-100 rounded-xl p-12 max-w-md mx-auto shadow-sm mt-4">
           <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm font-medium">No clients recorded yet.</p>
