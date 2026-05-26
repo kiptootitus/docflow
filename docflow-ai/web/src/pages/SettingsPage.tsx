@@ -1,30 +1,37 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Save, PlusCircle, Building2 } from "lucide-react";
-import { companiesApi } from "@/lib/api";
+import { Save, PlusCircle, Building2, Shield, QrCode, Copy, Check } from "lucide-react";
+import { companiesApi, authApi } from "@/lib/api";
 import type { Company } from "@/lib/api";
 
 export default function SettingsPage() {
   const qc = useQueryClient();
-  
-  // Fetch active company listings
-  const { data, isLoading } = useQuery({ 
-    queryKey: ["companies"], 
-    queryFn: () => companiesApi.list() 
+
+  // Company Settings
+  const { data, isLoading: companyLoading } = useQuery({
+    queryKey: ["companies"],
+    queryFn: () => companiesApi.list()
   });
-  
+
   const company = data?.data?.results?.[0];
   const hasNoCompany = !company;
 
+  // 2FA States
   const [form, setForm] = useState<Partial<Company>>({});
   const [statusText, setStatusText] = useState("");
+  const [show2FASection, setShow2FASection] = useState(false);
+  const [qrCode, setQrCode] = useState<string>("");
+  const [secret, setSecret] = useState<string>("");
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [copied, setCopied] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
-  // Sync state when company pulls down from backend server tracks
+  // Fetch Company
   useEffect(() => {
     if (company) {
       setForm(company);
     } else {
-      // Default baseline values for initialization mode
       setForm({
         default_currency: "KES",
         tax_rate: 16,
@@ -35,138 +42,246 @@ export default function SettingsPage() {
     }
   }, [company]);
 
-  // Dual-Action Core Sync Mutation Engine
+  // Save Company Settings
   const saveMutation = useMutation({
     mutationFn: () => {
       if (company?.id) {
-        // Mode 1: Update Existing Profile
         return companiesApi.update(company.id, form);
       } else {
-        // Mode 2: On-The-Fly Base Account Instantiation
         return companiesApi.create(form as any);
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["companies"] });
-      setStatusText("Configuration Saved Successfully!");
+      setStatusText("Company settings saved successfully!");
       setTimeout(() => setStatusText(""), 3000);
     },
     onError: (err: any) => {
-      alert(`Configuration Sync Failed: ${err.response?.data?.detail || "Verify attributes structure alignment."}`);
+      alert(`Save failed: ${err.response?.data?.detail || "Please check your input."}`);
     }
   });
+
+  // Enable 2FA Mutation
+  const enable2FAMutation = useMutation({
+    mutationFn: () => authApi.enable2FA(),
+    onSuccess: (res) => {
+      setQrCode(res.data.qr_code);
+      setSecret(res.data.secret);
+      setShow2FASection(true);
+    },
+    onError: (err: any) => {
+      alert(`Failed to enable 2FA: ${err.response?.data?.detail || "Try again."}`);
+    }
+  });
+
+  // Verify 2FA Code
+  const verify2FAMutation = useMutation({
+    mutationFn: (code: string) => authApi.verify2FA(code),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user"] });
+      setStatusText("✅ Two-Factor Authentication enabled successfully!");
+      setVerificationCode("");
+      setShow2FASection(false);
+      // Refresh backup codes
+      loadBackupCodes();
+    },
+    onError: () => {
+      alert("Invalid code. Please try again.");
+    }
+  });
+
+  // Load Backup Codes
+  const loadBackupCodes = async () => {
+    try {
+      const res = await authApi.getBackupCodes();
+      setBackupCodes(res.data.backup_codes || []);
+    } catch (err) {
+      console.error("Failed to load backup codes");
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const f = (key: keyof Company, label: string, type = "text") => (
     <div className="space-y-1">
       <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">{label}</label>
-      <input 
-        type={type} 
-        value={(form[key] as string | number) ?? ""} 
+      <input
+        type={type}
+        value={(form[key] as string | number) ?? ""}
         onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50/30 transition-all font-medium text-gray-800" 
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50/30 transition-all font-medium text-gray-800"
       />
     </div>
   );
 
-  if (isLoading) {
-    return (
-      <div className="p-8 max-w-2xl text-xs text-gray-400 font-medium animate-pulse">
-        Syncing system workspace settings...
-      </div>
-    );
+  if (companyLoading) {
+    return <div className="p-8 text-xs text-gray-400 animate-pulse">Loading settings...</div>;
   }
 
   return (
-    <div className="p-4 sm:p-8 max-w-3xl font-sans antialiased text-gray-800">
-      
-      {/* Dynamic Status Ribbon Control Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-white p-5 rounded-2xl border border-gray-100 shadow-2xs">
+    <div className="p-4 sm:p-8 max-w-4xl font-sans antialiased text-gray-800">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
-            <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
-              <Building2 className="w-5 h-5" />
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-3">
+            <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+              <Building2 className="w-6 h-6" />
             </div>
-            {hasNoCompany ? "Setup Your Work Profile" : "Application Settings"}
+            Account & Security Settings
           </h1>
-          <p className="text-gray-400 text-xs mt-0.5">
-            {hasNoCompany 
-              ? "Instantiate your primary company metrics to configure base templates defaults layout parameters." 
-              : "Manage transaction variables codes, branding components rules sheets and physical coordinates maps."}
-          </p>
+          <p className="text-gray-500 mt-1">Manage your workspace and security preferences</p>
         </div>
 
-        <div className="flex items-center gap-3 self-end sm:self-auto">
+        <div className="flex items-center gap-3">
           {statusText && (
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl animate-fade-in">
+            <span className="text-sm font-medium text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl">
               {statusText}
             </span>
           )}
-          
-          <button 
-            type="button"
-            onClick={() => saveMutation.mutate()} 
+          <button
+            onClick={() => saveMutation.mutate()}
             disabled={saveMutation.isPending}
-            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-98"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
           >
-            {hasNoCompany ? <PlusCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />} 
-            {saveMutation.isPending ? "Syncing..." : hasNoCompany ? "Create Workspace Profile" : "Save Configurations Updates"}
+            {saveMutation.isPending ? "Saving..." : "Save Company Settings"}
           </button>
         </div>
       </div>
 
-      <div className="space-y-6">
-        
-        {/* SECTION 1: SYSTEM ENTITY INFORMATION */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-2xs space-y-4">
-          <h2 className="font-bold text-xs text-gray-900 uppercase tracking-widest border-b border-gray-50 pb-2">Company Identifiers</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {f("name", "Company Legal Identity Name")}
-            {f("email", "Corporate Communications Email", "email")}
-            {f("phone", "Contact Phone Link Coordinate")}
-            {f("website", "Public Web Address Domain", "url")}
-            {f("vat_number", "Tax Registration / VAT Identifier Code")}
-            {f("default_currency", "Primary Transaction Valuation Currency")}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Company Information */}
+        <div className="space-y-8">
+          <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+            <h2 className="font-semibold text-lg mb-6 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-indigo-600" />
+              Company Profile
+            </h2>
+            <div className="space-y-6">
+              {f("name", "Company Legal Name")}
+              {f("email", "Business Email", "email")}
+              {f("phone", "Phone Number")}
+              {f("website", "Website", "url")}
+              {f("vat_number", "VAT / Tax ID")}
+            </div>
           </div>
-        </div>
 
-        {/* SECTION 2: PHYSICAL COORDINATES LAYOUT */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-2xs space-y-4">
-          <h2 className="font-bold text-xs text-gray-900 uppercase tracking-widest border-b border-gray-50 pb-2">Physical Address Coordinates</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {f("address_line1", "Street Address / Box Suite Line 1")}
-            {f("address_line2", "Apartment / Floor Suite Details Line 2")}
-            {f("city", "City Hub")}
-            {f("state", "State / County Boundary Profile")}
-            {f("postal_code", "Postal / Zip Index Code")}
-            {f("country", "Sovereign Country Territory Domain")}
-          </div>
-        </div>
+          <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+            <h2 className="font-semibold text-lg mb-6">Transaction Defaults</h2>
+            <div className="space-y-6">
+              {f("default_currency", "Default Currency")}
+              {f("invoice_prefix", "Invoice Prefix")}
+              {f("payment_due_days", "Payment Due Days", "number")}
+              {f("tax_rate", "Tax Rate (%)", "number")}
 
-        {/* SECTION 3: AUTOMATED TRANSACTIONS SYSTEM CONFIGURATIONS */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-2xs space-y-4">
-          <h2 className="font-bold text-xs text-gray-900 uppercase tracking-widest border-b border-gray-50 pb-2">Default Transaction Rules Variables</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {f("invoice_prefix", "Default Serial Prefix String (e.g. INV, QT)")}
-            {f("payment_due_days", "Standard Settlement Grace Frame (Days)", "number")}
-            {f("tax_rate", "Default Baseline Local VAT Rate (%)", "number")}
-            
-            <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Document Identity Branding Color</label>
-              <div className="flex items-center gap-2">
-                <input 
-                  type="color" 
-                  value={(form.branding_color as string) ?? "#6366f1"} 
-                  onChange={e => setForm(p => ({ ...p, branding_color: e.target.value }))}
-                  className="h-9 w-16 rounded-xl border border-gray-200 cursor-pointer p-0.5 bg-white" 
-                />
-                <span className="font-mono text-xs uppercase tracking-wider text-gray-400 font-bold">
-                  {(form.branding_color as string) ?? "#6366f1"}
-                </span>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Branding Color</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={(form.branding_color as string) ?? "#6366f1"}
+                    onChange={e => setForm(p => ({ ...p, branding_color: e.target.value }))}
+                    className="h-12 w-20 rounded-xl border border-gray-200 cursor-pointer"
+                  />
+                  <span className="font-mono text-sm text-gray-500">
+                    {(form.branding_color as string) ?? "#6366f1"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Security Section - 2FA */}
+        <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm h-fit">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-semibold text-lg flex items-center gap-2">
+              <Shield className="w-5 h-5 text-indigo-600" />
+              Security
+            </h2>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-medium">Two-Factor Authentication (2FA)</p>
+                  <p className="text-sm text-gray-500">Add an extra layer of security</p>
+                </div>
+                <button
+                  onClick={() => enable2FAMutation.mutate()}
+                  disabled={enable2FAMutation.isPending}
+                  className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {enable2FAMutation.isPending ? "Enabling..." : "Enable 2FA"}
+                </button>
+              </div>
+            </div>
+
+            {/* 2FA Setup Modal Section */}
+            {show2FASection && qrCode && (
+              <div className="border border-indigo-100 bg-indigo-50/50 rounded-2xl p-6">
+                <div className="text-center mb-4">
+                  <QrCode className="w-8 h-8 mx-auto text-indigo-600 mb-2" />
+                  <h3 className="font-semibold">Scan QR Code</h3>
+                  <p className="text-sm text-gray-600 mt-1">Use Google Authenticator, Authy, or Microsoft Authenticator</p>
+                </div>
+
+                <div className="flex justify-center mb-6 bg-white p-4 rounded-xl">
+                  <img src={qrCode} alt="2FA QR Code" className="border border-gray-200 rounded-lg" />
+                </div>
+
+                <div className="text-center mb-4">
+                  <p className="text-xs text-gray-500">Or enter this secret manually:</p>
+                  <code className="bg-gray-100 px-3 py-1 rounded font-mono text-sm">{secret}</code>
+                </div>
+
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Enter 6-digit code"
+                    className="w-full text-center text-3xl tracking-widest py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-indigo-500"
+                  />
+
+                  <button
+                    onClick={() => verify2FAMutation.mutate(verificationCode)}
+                    disabled={verifying || verificationCode.length !== 6}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-2xl font-medium disabled:opacity-50"
+                  >
+                    Verify & Activate 2FA
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Backup Codes */}
+            {backupCodes.length > 0 && (
+              <div className="mt-8">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  Backup Codes
+                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">One-time use</span>
+                </h3>
+                <div className="grid grid-cols-2 gap-2 bg-gray-50 p-4 rounded-2xl">
+                  {backupCodes.map((code, i) => (
+                    <div key={i} className="font-mono text-sm bg-white border border-gray-100 p-3 rounded-lg flex justify-between items-center">
+                      {code}
+                      <button onClick={() => copyToClipboard(code)}>
+                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-3">Save these codes somewhere safe. They can be used if you lose access to your authenticator.</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -4,7 +4,6 @@ from typing import Optional
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from django.db.models import Prefetch
 from django.conf import settings
 
 from rest_framework import viewsets, status
@@ -20,7 +19,14 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 import logging
 
 from .models import Invoice, Quotation, Contract
-from .serializers import InvoiceSerializer, QuotationSerializer, ContractSerializer
+from .serializers import (
+    InvoiceSerializer,
+    QuotationSerializer,
+    ContractListSerializer,
+    ContractDetailSerializer,
+    ContractStatusSerializer,
+    ContractPortalSerializer,
+)
 from .tasks import generate_invoice_pdf, send_invoice_email
 from documents.services.documents import clone_invoice, convert_quotation_to_invoice
 from documents.services.portal_security import verify_signed_token, generate_signed_token
@@ -65,14 +71,14 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     Full CRUD for invoices plus portal, email, PDF, and payment actions.
 
     Public endpoints (no auth required):
-        GET  /invoices/{id}/portal/?token=<signed>   — client portal view
+        GET  /invoices/{id}/portal/?token=<signed>   → client portal view
 
     Authenticated endpoints:
-        GET  /invoices/{id}/signed_link/             — generate signed portal URL
-        POST /invoices/{id}/generate_pdf/            — queue PDF generation
-        POST /invoices/{id}/send_email/              — send invoice to client
-        POST /invoices/{id}/mark_paid/               — record payment
-        POST /invoices/{id}/duplicate/               — clone invoice
+        GET  /invoices/{id}/signed_link/             → generate signed portal URL
+        POST /invoices/{id}/generate_pdf/            → queue PDF generation
+        POST /invoices/{id}/send_email/              → send invoice to client
+        POST /invoices/{id}/mark_paid/               → record payment
+        POST /invoices/{id}/duplicate/               → clone invoice
     """
 
     serializer_class = InvoiceSerializer
@@ -105,9 +111,6 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             raise ValidationError({"company": "This field is required."})
         _verify_company_access(company, self.request.user)
 
-        # FIX: inline invoice numbering — no dependency on a missing
-        # Company.next_invoice_number() method, race-safe with select_for_update
-        # inside the serializer's atomic create block.
         with transaction.atomic():
             count = (
                 Invoice.objects.select_for_update()
@@ -115,7 +118,6 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 .count()
             )
             number = f"INV-{count + 1:04d}"
-
             invoice = serializer.save(
                 created_by=self.request.user,
                 number=number,
@@ -151,15 +153,6 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         Public client portal — retrieves invoice data via a signed token.
 
         URL:  GET /api/documents/invoices/{invoice_uuid}/portal/?token={signed}
-
-        The frontend route should be:  /portal/:invoiceId
-        and it must pass ?token= as a query parameter (not in the path).
-
-        Flow:
-            1. signed_link action generates the full URL and emails it to the client
-            2. Client clicks link → lands on /portal/:invoiceId?token=...
-            3. Frontend calls this endpoint with the invoice UUID + token
-            4. Backend verifies HMAC signature, returns invoice data
         """
         token = request.query_params.get("token")
         if not token:
@@ -237,7 +230,6 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
         frontend_url = getattr(settings, "FRONTEND_URL", "").rstrip("/")
         url = f"{frontend_url}/portal/{invoice.id}?token={token}"
-
         return Response({"signed_url": url, "expires_in": expires_in})
 
     # -------------------------
@@ -264,7 +256,6 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     def send_email(self, request, pk: Optional[str] = None) -> Response:
         """
         Send invoice email to client and transition status to SENT.
-
         Validates client and company email before queuing the Celery task.
         """
         invoice = self.get_object()
@@ -310,9 +301,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     # -------------------------
     @action(detail=True, methods=["post"])
     def mark_paid(self, request, pk: Optional[str] = None) -> Response:
-        """
-        Mark invoice as paid. Uses select_for_update to prevent double-payment.
-        """
+        """Mark invoice as paid. Uses select_for_update to prevent double-payment."""
         invoice = self.get_object()
 
         with transaction.atomic():
@@ -352,7 +341,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     # -------------------------
     @action(detail=True, methods=["post"])
     def duplicate(self, request, pk: Optional[str] = None) -> Response:
-        """Clone an invoice (for creating recurring or similar invoices)."""
+        """Clone an invoice (for recurring or similar invoices)."""
         invoice = self.get_object()
 
         try:
@@ -438,9 +427,19 @@ class QuotationViewSet(viewsets.ModelViewSet):
 # =========================================================
 
 class ContractViewSet(viewsets.ModelViewSet):
-    """Full CRUD for contracts plus PDF generation."""
+    """
+    Full CRUD for contracts plus status transitions, PDF generation,
+    and a public client portal.
 
-    serializer_class = ContractSerializer
+    Public endpoints (no auth required):
+        GET  /contracts/{id}/portal/?token=<signed>  → client portal view
+
+    Authenticated endpoints:
+        GET  /contracts/{id}/signed_link/            → generate signed portal URL
+        PATCH /contracts/{id}/status/                → validated status transition
+        POST /contracts/{id}/generate_pdf/           → queue PDF generation
+    """
+
     permission_classes = [IsAuthenticated]
     throttle_classes = [AnonThrottle, UserThrottle]
 
@@ -450,6 +449,15 @@ class ContractViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "start_date", "end_date"]
     ordering = ["-created_at"]
 
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ContractListSerializer
+        if self.action == "update_status":
+            return ContractStatusSerializer
+        if self.action == "portal":
+            return ContractPortalSerializer
+        return ContractDetailSerializer
+
     def get_queryset(self):
         return (
             Contract.objects.filter(company__owner=self.request.user)
@@ -457,6 +465,9 @@ class ContractViewSet(viewsets.ModelViewSet):
             .prefetch_related("versions")
         )
 
+    # -------------------------
+    # CREATE
+    # -------------------------
     def perform_create(self, serializer):
         company = serializer.validated_data.get("company")
         if not company:
@@ -464,6 +475,111 @@ class ContractViewSet(viewsets.ModelViewSet):
         _verify_company_access(company, self.request.user)
         serializer.save(created_by=self.request.user)
 
+    # -------------------------
+    # STATUS TRANSITION
+    # -------------------------
+    @action(detail=True, methods=["patch"], url_path="status")
+    def update_status(self, request, pk: Optional[str] = None) -> Response:
+        """
+        PATCH /contracts/{id}/status/
+
+        Enforces valid status transitions defined in ContractStatusSerializer.
+        Returns the full contract detail on success.
+
+        Valid transitions:
+            draft     → pending, cancelled
+            pending   → signed, cancelled, expired
+            signed    → completed, expired
+            completed → (none)
+            expired   → draft
+            cancelled → draft
+        """
+        contract = self.get_object()
+        serializer = ContractStatusSerializer(
+            contract,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        contract.refresh_from_db()
+        return Response(
+            ContractDetailSerializer(contract, context={"request": request}).data
+        )
+
+    # -------------------------
+    # PUBLIC PORTAL
+    # -------------------------
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="portal",
+        permission_classes=[AllowAny],
+        throttle_classes=[AnonThrottle],
+    )
+    def portal(self, request, pk: Optional[str] = None) -> Response:
+        """
+        Public client portal — retrieves contract data via a signed token.
+
+        URL:  GET /api/documents/contracts/{contract_uuid}/portal/?token={signed}
+        """
+        token = request.query_params.get("token")
+        if not token:
+            return Response(
+                {"detail": "Missing token.", "error": "missing_token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        contract = get_object_or_404(
+            Contract.objects.select_related("client", "company"),
+            id=pk,
+        )
+
+        if not verify_signed_token(token, contract.id):
+            logger.warning(f"Invalid/expired portal token for contract {contract.id}")
+            return Response(
+                {"detail": "This link has expired or is invalid.", "error": "invalid_token"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return Response(
+            ContractPortalSerializer(contract, context={"request": request}).data
+        )
+
+    # -------------------------
+    # SIGNED LINK GENERATOR
+    # -------------------------
+    @action(detail=True, methods=["get"])
+    def signed_link(self, request, pk: Optional[str] = None) -> Response:
+        """
+        Generate a time-limited signed URL for the contract client portal.
+
+        Returns:
+            {
+                "signed_url": "https://app.docflowai.com/portal/contracts/{id}?token={token}",
+                "expires_in": 86400
+            }
+        """
+        contract = self.get_object()
+        expires_in = 86400  # 24 hours
+
+        try:
+            token = generate_signed_token(contract.id, expires_in=expires_in)
+        except Exception as e:
+            logger.error(f"Failed to generate signed token for contract {contract.id}: {e}")
+            return Response(
+                {"error": "Could not generate portal link."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        frontend_url = getattr(settings, "FRONTEND_URL", "").rstrip("/")
+        url = f"{frontend_url}/portal/contracts/{contract.id}?token={token}"
+        return Response({"signed_url": url, "expires_in": expires_in})
+
+    # -------------------------
+    # PDF GENERATION
+    # -------------------------
     @action(detail=True, methods=["post"])
     def generate_pdf(self, request, pk: Optional[str] = None) -> Response:
         """Queue PDF generation for a contract via Celery."""

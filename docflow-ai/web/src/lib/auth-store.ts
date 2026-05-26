@@ -34,7 +34,9 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const { data } = await authApi.login(email, password);
+          // Sync to storage and update store memory instantly
           get().setTokens(data.access, data.refresh);
+          // Proceed to grab profile payload securely
           await get().fetchMe();
         } finally {
           set({ isLoading: false });
@@ -44,7 +46,11 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         const refresh = get().refreshToken;
         if (refresh) {
-          try { await authApi.logout(refresh); } catch {}
+          try {
+            await authApi.logout(refresh);
+          } catch {
+            // Suppress error and proceed with local clearance
+          }
         }
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
@@ -55,8 +61,9 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { data } = await authApi.me();
           set({ user: data });
-        } catch {
+        } catch (err) {
           get().logout();
+          throw err;
         }
       },
     }),

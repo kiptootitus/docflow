@@ -22,7 +22,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1',
+    default='localhost,127.0.0.1,172.18.0.2,172.18.0.1,172.18.0.3,172.18.0.4',
     cast=lambda v: [s.strip() for s in v.split(',') if s.strip()]
 )
 
@@ -248,55 +248,25 @@ SIMPLE_JWT = {
 
 
 # ====================== CORS ======================
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000',
-    cast=lambda v: [s.strip() for s in v.split(',') if s.strip()]
-)
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://172.18.0.1:3000',
+    'http://172.18.0.2:3000',
+    'http://172.18.0.3:3000',
+    'http://172.18.0.4:3000',
+]
 
-CSRF_TRUSTED_ORIGINS = config(
-    'CSRF_TRUSTED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000',
-    cast=lambda v: [s.strip() for s in v.split(',') if s.strip()]
-)
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://172.18.0.1:3000',
+    'http://172.18.0.2:3000',
+    'http://172.18.0.3:3000',
+    'http://172.18.0.4:3000',
+]
 
 CORS_ALLOW_CREDENTIALS = True
-
-
-# ====================== CELERY ======================
-REDIS_URL = os.environ.get('REDIS_URL')
-
-if REDIS_URL:
-    CELERY_BROKER_URL = REDIS_URL
-    CELERY_RESULT_BACKEND = REDIS_URL
-
-else:
-    REDIS_HOST = config('REDIS_HOST', default='localhost')
-    REDIS_PORT = config('REDIS_PORT', default='6379')
-    REDIS_PASSWORD = config('REDIS_PASSWORD', default='')
-
-    if REDIS_PASSWORD:
-        CELERY_BROKER_URL = (
-            f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
-        )
-
-        CELERY_RESULT_BACKEND = (
-            f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
-        )
-
-    else:
-        CELERY_BROKER_URL = (
-            f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
-        )
-
-        CELERY_RESULT_BACKEND = (
-            f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
-        )
-
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
 
 
 # ====================== EMAIL (SENDGRID) ======================
@@ -431,16 +401,16 @@ SITE_ID = 1
 
 # ====================== DEFAULT PRIMARY KEY ======================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# ====================== CELERY ======================
 
-# SAFE REDIS CONFIG (Docker + Local compatible)
+
+# ====================== CELERY ======================
 REDIS_URL = os.environ.get("REDIS_URL")
 
 if REDIS_URL:
     CELERY_BROKER_URL = REDIS_URL
     CELERY_RESULT_BACKEND = REDIS_URL
 else:
-    REDIS_HOST = config("REDIS_HOST", default="redis")  # 👈 FIXED (NOT localhost)
+    REDIS_HOST = config("REDIS_HOST", default="redis")
     REDIS_PORT = config("REDIS_PORT", default="6379")
     REDIS_PASSWORD = config("REDIS_PASSWORD", default="")
 
@@ -454,7 +424,6 @@ else:
 
 
 # ====================== CELERY OPTIONS ======================
-
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -462,7 +431,6 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = False
 
-# 🔥 IMPORTANT FIXES (your stability issues)
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
