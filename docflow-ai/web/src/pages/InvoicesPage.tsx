@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Send, Copy, Trash2, ExternalLink, FileText } from "lucide-react";
+import { Plus, Search, Send, Copy, Trash2, ExternalLink } from "lucide-react";
 import { invoicesApi } from "@/lib/api";
 import { formatCurrency, formatDate, STATUS_COLORS, cn } from "@/lib/utils";
 
@@ -73,7 +73,7 @@ export default function InvoicesPage() {
         </select>
       </div>
 
-      {/* Table Canvas with Scroll Container Wrapper */}
+      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] table-auto">
@@ -103,10 +103,11 @@ export default function InvoicesPage() {
                     <p className="text-xs text-gray-400 mt-0.5">{formatDate(inv.created_at)}</p>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700 truncate max-w-[160px]">
-                    {inv.client_name ?? <span className="text-gray-300">—</span>}
+                    {/* client_display_name comes from InvoiceListSerializer */}
+                    {(inv as any).client_display_name ?? inv.client_name ?? <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
-                    {formatCurrency(inv.total_amount, inv.currency)}
+                    {formatCurrency(inv.total, inv.currency)}
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full capitalize inline-block text-center min-w-[75px]", STATUS_COLORS[inv.status])}>
@@ -131,8 +132,8 @@ export default function InvoicesPage() {
                       <button title="Duplicate" onClick={() => dupMutation.mutate(inv.id)} className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors">
                         <Copy className="w-3.5 h-3.5" />
                       </button>
-                      {inv.portal_url && (
-                        <a href={inv.portal_url} target="_blank" rel="noreferrer" title="Client portal" className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors">
+                      {inv.stripe_payment_link_url && (
+                        <a href={inv.stripe_payment_link_url} target="_blank" rel="noreferrer" title="Client portal" className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors">
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       )}

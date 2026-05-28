@@ -1,26 +1,59 @@
+"""
+DocFlow AI — users/urls.py
+
+All auth + user management routes.
+Mount this under /api/v1/auth/ in your root urls.py:
+
+    path("api/v1/auth/", include("users.urls")),
+"""
+
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from rest_framework_simplejwt.views import TokenRefreshView
+
 from .views import (
-    RegisterView, ProfileView, ChangePasswordView, logout_view,
-    GoogleLoginView, PasswordResetRequestView, PasswordResetConfirmView
+    ChangePasswordView,
+    GoogleLoginView,
+    LoginView,
+    LogoutView,
+    MeView,
+    MyAuditLogsView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
+    ResendVerificationView,
+    TOTPVerifyLoginView,
+    UserDetailView,
+    UserListView,
+    UserRegistrationView,
+    UserRestoreView,
+    VerifyEmailView,
 )
 
 urlpatterns = [
-    # Auth Basics & JWT
-    path("register/", RegisterView.as_view(), name="register"),
-    path("login/", TokenObtainPairView.as_view(), name="login"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
-    path("token/verify/", TokenVerifyView.as_view(), name="token-verify"),
-    path("logout/", logout_view, name="logout"),
+    # ── Auth ────────────────────────────────────────────────────────────────
+    path("register/",               UserRegistrationView.as_view(),  name="user-register"),
+    path("login/",                  LoginView.as_view(),              name="user-login"),
+    path("login/verify-totp/",      TOTPVerifyLoginView.as_view(),    name="user-login-totp"),
+    path("logout/",                 LogoutView.as_view(),             name="user-logout"),   # ← ADDED
+    path("google/",                 GoogleLoginView.as_view(),        name="user-google-login"),
 
-    # Profile management
-    path("me/", ProfileView.as_view(), name="profile"),
-    path("me/change-password/", ChangePasswordView.as_view(), name="change-password"),
+    # ── Token refresh ────────────────────────────────────────────────────────
+    path("token/refresh/",          TokenRefreshView.as_view(),       name="token-refresh"),
 
-    # Password Reset flow
-    path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset-request"),
-    path("password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
+    # ── Email verification ───────────────────────────────────────────────────
+    path("verify-email/",           VerifyEmailView.as_view(),        name="user-verify-email"),
+    path("resend-verification/",    ResendVerificationView.as_view(), name="user-resend-verification"),
 
-    # Social Login Flow
-    path("google/", GoogleLoginView.as_view(), name="google-login"),
+    # ── Password reset ───────────────────────────────────────────────────────
+    path("password-reset/",         PasswordResetRequestView.as_view(), name="user-password-reset"),
+    path("password-reset/confirm/", PasswordResetConfirmView.as_view(), name="user-password-reset-confirm"),
+
+    # ── Authenticated user ───────────────────────────────────────────────────
+    path("me/",                     MeView.as_view(),                 name="user-me"),
+    path("me/change-password/",     ChangePasswordView.as_view(),     name="user-change-password"),
+    path("me/audit-logs/",          MyAuditLogsView.as_view(),        name="user-audit-logs"),
+
+    # ── Admin ────────────────────────────────────────────────────────────────
+    path("users/",                  UserListView.as_view(),           name="user-list"),
+    path("users/<uuid:pk>/",        UserDetailView.as_view(),         name="user-detail"),
+    path("users/<uuid:pk>/restore/",UserRestoreView.as_view(),        name="user-restore"),
 ]

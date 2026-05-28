@@ -20,7 +20,7 @@ export default function ClientPortalPage() {
     }
 
     // Isolate client portal endpoint fetches so they don't break on company-loading limits
-    api.get(`/portal/invoice/${token}`)
+    api.get(`/portal/invoice/${token}/`)
       .then((res) => {
         // Fallback structures to handle different formats safely
         const invoiceData = res.data?.data ?? res.data;

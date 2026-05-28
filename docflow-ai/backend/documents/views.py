@@ -1,597 +1,384 @@
-"""Documents views"""
 
-from typing import Optional
-from django.utils import timezone
+# Create your views here.
+"""
+DocFlow AI — documents/views.py
+
+ModelViewSets for Invoice, Quotation, and Contract.
+
+Permissions follow users/permissions.py:
+  • IsCompanyMember — can read + create
+  • IsOwner         — can update + delete
+  • IsClientReadOnly — read own documents via portal
+  • HasValidPortalToken — public portal endpoint
+
+Extra actions:
+  Invoice:   send, void, mark_paid, download_pdf, download_docx
+  Quotation: send, accept, decline, convert_to_invoice, download_pdf
+  Contract:  send, sign, download_pdf, ai_review
+"""
+
+from __future__ import annotations
+
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
-from django.db import transaction
-from django.conf import settings
-
-from rest_framework import viewsets, status
+from django.utils.translation import gettext_lazy as _
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.exceptions import ValidationError, PermissionDenied
-from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
-
-import logging
-
-from .models import Invoice, Quotation, Contract
-from .serializers import (
-    InvoiceSerializer,
-    QuotationSerializer,
-    ContractListSerializer,
-    ContractDetailSerializer,
-    ContractStatusSerializer,
-    ContractPortalSerializer,
+from users.permissions import (
+    HasValidPortalToken,
+    IsClientReadOnly,
+    IsCompanyMember,
+    IsOwner,
+    IsVerifiedUser,
 )
-from .tasks import generate_invoice_pdf, send_invoice_email
-from documents.services.documents import clone_invoice, convert_quotation_to_invoice
-from documents.services.portal_security import verify_signed_token, generate_signed_token
-from documents.services.ledger import create_ledger_event
 
-logger = logging.getLogger(__name__)
-
-
-# =========================================================
-# THROTTLING
-# =========================================================
-
-class AnonThrottle(AnonRateThrottle):
-    scope = "anon"
-    rate = "100/hour"
+from .filters import ContractFilter, InvoiceFilter, QuotationFilter
+from .models import Contract, Invoice, Quotation
+from .serializers import (
+    ContractListSerializer,
+    ContractSerializer,
+    InvoiceListSerializer,
+    InvoicePortalSerializer,
+    InvoiceSerializer,
+    QuotationListSerializer,
+    QuotationSerializer,
+)
+from .tasks import generate_docx_task, generate_pdf_task, send_document_email_task
 
 
-class UserThrottle(UserRateThrottle):
-    scope = "user"
-    rate = "1000/hour"
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _company_ids_for_user(user) -> list:
+    """Return list of company PKs the user is an active member of."""
+    from companies.models import CompanyMembership
+    from users.models import UserRole
+    if user.role == UserRole.SUPER_ADMIN:
+        from companies.models import Company
+        return list(Company.objects.filter(is_active=True).values_list("id", flat=True))
+    return list(
+        CompanyMembership.objects.filter(user=user, is_active=True)
+        .values_list("company_id", flat=True)
+    )
 
 
-# =========================================================
-# SHARED HELPER
-# =========================================================
-
-def _verify_company_access(company, user):
-    """
-    Raise PermissionDenied if user does not own the given company.
-    Centralised so all three viewsets use the same check.
-    """
-    if company.owner != user:
-        raise PermissionDenied("You don't have access to this company.")
-
-
-# =========================================================
-# INVOICE VIEWSET
-# =========================================================
+# ---------------------------------------------------------------------------
+# Invoice
+# ---------------------------------------------------------------------------
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     """
-    Full CRUD for invoices plus portal, email, PDF, and payment actions.
+    list    GET  /api/invoices/
+    create  POST /api/invoices/
+    retrieve GET /api/invoices/<pk>/
+    update  PATCH /api/invoices/<pk>/
+    destroy DELETE /api/invoices/<pk>/
 
-    Public endpoints (no auth required):
-        GET  /invoices/{id}/portal/?token=<signed>   → client portal view
-
-    Authenticated endpoints:
-        GET  /invoices/{id}/signed_link/             → generate signed portal URL
-        POST /invoices/{id}/generate_pdf/            → queue PDF generation
-        POST /invoices/{id}/send_email/              → send invoice to client
-        POST /invoices/{id}/mark_paid/               → record payment
-        POST /invoices/{id}/duplicate/               → clone invoice
+    extra:
+      POST /api/invoices/<pk>/send/
+      POST /api/invoices/<pk>/void/
+      POST /api/invoices/<pk>/mark_paid/
+      GET  /api/invoices/<pk>/download_pdf/
+      GET  /api/invoices/<pk>/download_docx/
+      GET  /api/invoices/portal/  — HasValidPortalToken
     """
 
-    serializer_class = InvoiceSerializer
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [AnonThrottle, UserThrottle]
+    filterset_class  = InvoiceFilter
+    search_fields    = ["number", "client_name", "client_email", "subject"]
+    ordering_fields  = ["created_at", "due_date", "total", "status"]
+    ordering         = ["-created_at"]
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["status", "currency", "client"]
-    search_fields = ["number", "client__name"]
-    ordering_fields = ["created_at", "due_date", "total_amount"]
-    ordering = ["-created_at"]
+    def get_permissions(self):
+        if self.action == "portal":
+            return [HasValidPortalToken()]
+        if self.action in ("update", "partial_update", "destroy", "void"):
+            return [IsVerifiedUser(), IsOwner()]
+        if self.action in ("send", "mark_paid"):
+            return [IsVerifiedUser(), IsCompanyMember()]
+        return [IsVerifiedUser(), IsCompanyMember()]
+
+    def get_serializer_class(self):
+        if self.action == "portal":
+            return InvoicePortalSerializer
+        if self.action == "list":
+            return InvoiceListSerializer
+        return InvoiceSerializer
 
     def get_queryset(self):
+        user = self.request.user
+        company_ids = _company_ids_for_user(user)
         return (
-            Invoice.objects.filter(
-                company__owner=self.request.user,
-                is_deleted=False,
-            )
-            .select_related("client", "company")
+            Invoice.objects
+            .filter(company_id__in=company_ids, is_active=True)
+            .select_related("company", "company__branding", "client", "created_by")
             .prefetch_related("line_items")
-            .order_by("-created_at")
         )
 
-    # -------------------------
-    # CREATE
-    # -------------------------
-    def perform_create(self, serializer):
-        company = serializer.validated_data.get("company")
-        if not company:
-            raise ValidationError({"company": "This field is required."})
-        _verify_company_access(company, self.request.user)
+    def perform_destroy(self, instance: Invoice) -> None:
+        instance.soft_delete()
 
-        with transaction.atomic():
-            count = (
-                Invoice.objects.select_for_update()
-                .filter(company=company, is_deleted=False)
-                .count()
-            )
-            number = f"INV-{count + 1:04d}"
-            invoice = serializer.save(
-                created_by=self.request.user,
-                number=number,
-            )
+    # ------------------------------------------------------------------
+    # Extra actions
+    # ------------------------------------------------------------------
 
-        try:
-            create_ledger_event(
-                user=self.request.user,
-                event_type="INVOICE_CREATED",
-                snapshot={
-                    "id": str(invoice.id),
-                    "number": invoice.number,
-                    "total": str(invoice.total_amount),
-                    "client_id": str(invoice.client.id) if invoice.client else None,
-                },
-                invoice_id=invoice.id,
-            )
-        except Exception as e:
-            logger.error(f"Ledger event failed for invoice {invoice.id}: {e}")
-
-    # -------------------------
-    # PUBLIC PORTAL
-    # -------------------------
-    @action(
-        detail=True,
-        methods=["get"],
-        url_path="portal",
-        permission_classes=[AllowAny],
-        throttle_classes=[AnonThrottle],
-    )
-    def portal(self, request, pk: Optional[str] = None) -> Response:
-        """
-        Public client portal — retrieves invoice data via a signed token.
-
-        URL:  GET /api/documents/invoices/{invoice_uuid}/portal/?token={signed}
-        """
-        token = request.query_params.get("token")
-        if not token:
+    @action(detail=True, methods=["post"])
+    def send(self, request: Request, pk=None) -> Response:
+        """POST /api/invoices/<pk>/send/ — queues email + marks sent."""
+        invoice = self.get_object()
+        if invoice.status not in ("draft", "viewed"):
             return Response(
-                {"detail": "Missing token.", "error": "missing_token"},
+                {"detail": _("Only draft invoices can be sent.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        invoice.mark_sent()
+        send_document_email_task.delay("invoice", str(invoice.pk))
+        return Response({"detail": _("Invoice queued for delivery.")})
 
-        invoice = get_object_or_404(
-            Invoice.objects.select_related("client", "company").prefetch_related("line_items"),
-            id=pk,
-            is_deleted=False,
-        )
-
-        if not verify_signed_token(token, invoice.id):
-            logger.warning(f"Invalid/expired portal token for invoice {invoice.id}")
-            return Response(
-                {"detail": "This link has expired or is invalid.", "error": "invalid_token"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        # Atomic: only transition SENT → VIEWED once (race-safe)
-        updated = Invoice.objects.filter(
-            id=invoice.id,
-            status=Invoice.Status.SENT,
-        ).update(
-            status=Invoice.Status.VIEWED,
-            viewed_at=timezone.now(),
-            portal_used=True,
-        )
-
-        if updated:
-            invoice.refresh_from_db()
-            try:
-                create_ledger_event(
-                    user=invoice.created_by,
-                    event_type="INVOICE_VIEWED",
-                    snapshot={
-                        "id": str(invoice.id),
-                        "number": invoice.number,
-                        "total": str(invoice.total_amount),
-                    },
-                    invoice_id=invoice.id,
-                )
-            except Exception as e:
-                logger.error(f"Ledger event failed on invoice view {invoice.id}: {e}")
-
-        return Response(InvoiceSerializer(invoice, context={"request": request}).data)
-
-    # -------------------------
-    # SIGNED LINK GENERATOR
-    # -------------------------
-    @action(detail=True, methods=["get"])
-    def signed_link(self, request, pk: Optional[str] = None) -> Response:
-        """
-        Generate a time-limited signed URL for the client portal.
-
-        Returns:
-            {
-                "signed_url": "https://app.docflowai.com/portal/{id}?token={token}",
-                "expires_in": 86400
-            }
-        """
-        invoice = self.get_object()
-        expires_in = 86400  # 24 hours
-
-        try:
-            token = generate_signed_token(invoice.id, expires_in=expires_in)
-        except Exception as e:
-            logger.error(f"Failed to generate signed token for invoice {invoice.id}: {e}")
-            return Response(
-                {"error": "Could not generate portal link."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        frontend_url = getattr(settings, "FRONTEND_URL", "").rstrip("/")
-        url = f"{frontend_url}/portal/{invoice.id}?token={token}"
-        return Response({"signed_url": url, "expires_in": expires_in})
-
-    # -------------------------
-    # PDF GENERATION
-    # -------------------------
     @action(detail=True, methods=["post"])
-    def generate_pdf(self, request, pk: Optional[str] = None) -> Response:
-        """Queue PDF generation via Celery."""
+    def void(self, request: Request, pk=None) -> Response:
+        """POST /api/invoices/<pk>/void/"""
         invoice = self.get_object()
-        try:
-            task = generate_invoice_pdf.delay(str(invoice.id))
-            return Response({"task_id": task.id, "status": "queued"})
-        except Exception as e:
-            logger.error(f"Failed to queue PDF for invoice {invoice.id}: {e}")
+        if invoice.status == "paid":
             return Response(
-                {"error": "Failed to queue PDF generation."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    # -------------------------
-    # SEND EMAIL
-    # -------------------------
-    @action(detail=True, methods=["post"])
-    def send_email(self, request, pk: Optional[str] = None) -> Response:
-        """
-        Send invoice email to client and transition status to SENT.
-        Validates client and company email before queuing the Celery task.
-        """
-        invoice = self.get_object()
-
-        if not invoice.client:
-            return Response(
-                {"error": "No client is assigned to this invoice."},
+                {"detail": _("A paid invoice cannot be voided.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if not invoice.client.email:
+        invoice.status = "void"
+        invoice.save(update_fields=["status", "updated_at"])
+        return Response({"detail": _("Invoice voided.")})
+
+    @action(detail=True, methods=["post"], url_path="mark-paid")
+    def mark_paid(self, request: Request, pk=None) -> Response:
+        """POST /api/invoices/<pk>/mark-paid/"""
+        invoice = self.get_object()
+        amount = request.data.get("amount")
+        try:
+            amount = float(amount) if amount is not None else None
+        except (ValueError, TypeError):
             return Response(
-                {"error": "The assigned client has no email address."},
+                {"detail": _("Invalid amount.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if not invoice.company.email:
-            return Response(
-                {"error": "Company sending email is not configured."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        from decimal import Decimal
+        invoice.mark_paid(Decimal(str(amount)) if amount is not None else None)
+        return Response({"detail": _("Invoice marked as paid.")})
 
-        with transaction.atomic():
-            Invoice.objects.filter(id=invoice.id).update(
-                status=Invoice.Status.SENT,
-                sent_at=timezone.now(),
-            )
-
-        try:
-            send_invoice_email.delay(str(invoice.id))
-        except Exception as e:
-            logger.error(f"Failed to queue email for invoice {invoice.id}: {e}")
-            return Response(
-                {"error": "Failed to queue email delivery."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        return Response({
-            "detail": "Invoice email has been queued for delivery.",
-            "status": "sent",
-        })
-
-    # -------------------------
-    # MARK PAID
-    # -------------------------
-    @action(detail=True, methods=["post"])
-    def mark_paid(self, request, pk: Optional[str] = None) -> Response:
-        """Mark invoice as paid. Uses select_for_update to prevent double-payment."""
+    @action(detail=True, methods=["get"], url_path="download-pdf")
+    def download_pdf(self, request: Request, pk=None) -> Response:
+        """GET /api/invoices/<pk>/download-pdf/ — regenerate if needed, return URL."""
         invoice = self.get_object()
-
-        with transaction.atomic():
-            updated = (
-                Invoice.objects.select_for_update()
-                .filter(id=invoice.id, is_deleted=False)
-                .exclude(status=Invoice.Status.PAID)
-                .update(status=Invoice.Status.PAID, paid_at=timezone.now())
-            )
-
-            if updated == 0:
-                return Response(
-                    {"error": "Invoice is already paid or has been deleted."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            invoice.refresh_from_db()
-
-            try:
-                create_ledger_event(
-                    user=request.user,
-                    event_type="INVOICE_PAID",
-                    snapshot={
-                        "id": str(invoice.id),
-                        "number": invoice.number,
-                        "total": str(invoice.total_amount),
-                    },
-                    invoice_id=invoice.id,
-                )
-            except Exception as e:
-                logger.error(f"Ledger event failed on invoice payment {invoice.id}: {e}")
-
-        return Response(InvoiceSerializer(invoice, context={"request": request}).data)
-
-    # -------------------------
-    # DUPLICATE
-    # -------------------------
-    @action(detail=True, methods=["post"])
-    def duplicate(self, request, pk: Optional[str] = None) -> Response:
-        """Clone an invoice (for recurring or similar invoices)."""
-        invoice = self.get_object()
-
-        try:
-            new_invoice = clone_invoice(invoice, request.user)
-        except Exception as e:
-            logger.error(f"Failed to clone invoice {invoice.id}: {e}")
+        if not invoice.pdf_file:
+            generate_pdf_task.delay("invoice", str(invoice.pk))
             return Response(
-                {"error": "Failed to duplicate invoice."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"detail": _("PDF generation queued. Try again in a moment.")},
+                status=status.HTTP_202_ACCEPTED,
             )
+        return Response({"url": invoice.pdf_file.url})
 
-        return Response(
-            InvoiceSerializer(new_invoice, context={"request": request}).data,
-            status=status.HTTP_201_CREATED,
-        )
+    @action(detail=True, methods=["get"], url_path="download-docx")
+    def download_docx(self, request: Request, pk=None) -> Response:
+        invoice = self.get_object()
+        if not invoice.docx_file:
+            generate_docx_task.delay("invoice", str(invoice.pk))
+            return Response(
+                {"detail": _("DOCX generation queued. Try again in a moment.")},
+                status=status.HTTP_202_ACCEPTED,
+            )
+        return Response({"url": invoice.docx_file.url})
+
+    @action(detail=False, methods=["get"],
+            permission_classes=[HasValidPortalToken])
+    def portal(self, request: Request) -> Response:
+        """GET /api/invoices/portal/?token=<jwt>"""
+        payload = getattr(request, "_portal_token_payload", {})
+        invoice_id = payload.get("invoice_id")
+        if not invoice_id:
+            return Response(
+                {"detail": _("Invalid portal token.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        invoice = get_object_or_404(Invoice, pk=invoice_id, is_active=True)
+        return Response(InvoicePortalSerializer(invoice, context={"request": request}).data)
 
 
-# =========================================================
-# QUOTATION VIEWSET
-# =========================================================
+# ---------------------------------------------------------------------------
+# Quotation
+# ---------------------------------------------------------------------------
 
 class QuotationViewSet(viewsets.ModelViewSet):
-    """Full CRUD for quotations plus convert-to-invoice action."""
+    filterset_class   = QuotationFilter
+    search_fields     = ["number", "client_name", "client_email", "subject"]
+    ordering_fields   = ["created_at", "valid_until", "total", "status"]
+    ordering          = ["-created_at"]
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
-    serializer_class = QuotationSerializer
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [AnonThrottle, UserThrottle]
+    def get_permissions(self):
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsVerifiedUser(), IsOwner()]
+        return [IsVerifiedUser(), IsCompanyMember()]
 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["status", "currency", "client"]
-    search_fields = ["number", "client__name"]
-    ordering_fields = ["created_at", "due_date", "total_amount"]
-    ordering = ["-created_at"]
+    def get_serializer_class(self):
+        return QuotationListSerializer if self.action == "list" else QuotationSerializer
 
     def get_queryset(self):
+        company_ids = _company_ids_for_user(self.request.user)
         return (
-            Quotation.objects.filter(
-                company__owner=self.request.user,
-                is_deleted=False,
-            )
-            .select_related("client", "company")
+            Quotation.objects
+            .filter(company_id__in=company_ids, is_active=True)
+            .select_related("company", "client", "created_by")
             .prefetch_related("line_items")
         )
 
-    def perform_create(self, serializer):
-        company = serializer.validated_data.get("company")
-        if not company:
-            raise ValidationError({"company": "This field is required."})
-        _verify_company_access(company, self.request.user)
-
-        with transaction.atomic():
-            count = (
-                Quotation.objects.select_for_update()
-                .filter(company=company, is_deleted=False)
-                .count()
-            )
-            number = f"QT-{count + 1:04d}"
-            serializer.save(created_by=self.request.user, number=number)
+    def perform_destroy(self, instance: Quotation) -> None:
+        instance.soft_delete()
 
     @action(detail=True, methods=["post"])
-    def convert_to_invoice(self, request, pk: Optional[str] = None) -> Response:
-        """Convert an accepted quotation into a draft invoice."""
+    def send(self, request: Request, pk=None) -> Response:
         quotation = self.get_object()
-
-        try:
-            with transaction.atomic():
-                invoice = convert_quotation_to_invoice(quotation, request.user)
-        except Exception as e:
-            logger.error(f"Failed to convert quotation {quotation.id}: {e}")
+        if quotation.status != "draft":
             return Response(
-                {"error": "Failed to convert quotation to invoice."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"detail": _("Only draft quotations can be sent.")},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+        from django.utils import timezone
+        quotation.status  = "sent"
+        quotation.sent_at = timezone.now()
+        quotation.save(update_fields=["status", "sent_at", "updated_at"])
+        send_document_email_task.delay("quotation", str(quotation.pk))
+        return Response({"detail": _("Quotation queued for delivery.")})
 
+    @action(detail=True, methods=["post"])
+    def accept(self, request: Request, pk=None) -> Response:
+        quotation = self.get_object()
+        if quotation.status not in ("sent", "viewed"):
+            return Response(
+                {"detail": _("Only sent or viewed quotations can be accepted.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        from django.utils import timezone
+        quotation.status      = "accepted"
+        quotation.accepted_at = timezone.now()
+        quotation.save(update_fields=["status", "accepted_at", "updated_at"])
+        return Response({"detail": _("Quotation accepted.")})
+
+    @action(detail=True, methods=["post"])
+    def decline(self, request: Request, pk=None) -> Response:
+        quotation = self.get_object()
+        quotation.status = "declined"
+        quotation.save(update_fields=["status", "updated_at"])
+        return Response({"detail": _("Quotation declined.")})
+
+    @action(detail=True, methods=["post"], url_path="convert-to-invoice")
+    def convert_to_invoice(self, request: Request, pk=None) -> Response:
+        """POST /api/quotations/<pk>/convert-to-invoice/"""
+        quotation = self.get_object()
+        if quotation.status != "accepted":
+            return Response(
+                {"detail": _("Only accepted quotations can be converted to invoices.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        invoice = quotation.convert_to_invoice()
         return Response(
             InvoiceSerializer(invoice, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
+    @action(detail=True, methods=["get"], url_path="download-pdf")
+    def download_pdf(self, request: Request, pk=None) -> Response:
+        quotation = self.get_object()
+        if not quotation.pdf_file:
+            generate_pdf_task.delay("quotation", str(quotation.pk))
+            return Response(
+                {"detail": _("PDF generation queued.")},
+                status=status.HTTP_202_ACCEPTED,
+            )
+        return Response({"url": quotation.pdf_file.url})
 
-# =========================================================
-# CONTRACT VIEWSET
-# =========================================================
+
+# ---------------------------------------------------------------------------
+# Contract
+# ---------------------------------------------------------------------------
 
 class ContractViewSet(viewsets.ModelViewSet):
-    """
-    Full CRUD for contracts plus status transitions, PDF generation,
-    and a public client portal.
+    filterset_class   = ContractFilter
+    search_fields     = ["number", "client_name", "client_email", "subject"]
+    ordering_fields   = ["created_at", "end_date", "status"]
+    ordering          = ["-created_at"]
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
-    Public endpoints (no auth required):
-        GET  /contracts/{id}/portal/?token=<signed>  → client portal view
-
-    Authenticated endpoints:
-        GET  /contracts/{id}/signed_link/            → generate signed portal URL
-        PATCH /contracts/{id}/status/                → validated status transition
-        POST /contracts/{id}/generate_pdf/           → queue PDF generation
-    """
-
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [AnonThrottle, UserThrottle]
-
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["status", "contract_type"]
-    search_fields = ["title", "client__name"]
-    ordering_fields = ["created_at", "start_date", "end_date"]
-    ordering = ["-created_at"]
+    def get_permissions(self):
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsVerifiedUser(), IsOwner()]
+        return [IsVerifiedUser(), IsCompanyMember()]
 
     def get_serializer_class(self):
-        if self.action == "list":
-            return ContractListSerializer
-        if self.action == "update_status":
-            return ContractStatusSerializer
-        if self.action == "portal":
-            return ContractPortalSerializer
-        return ContractDetailSerializer
+        return ContractListSerializer if self.action == "list" else ContractSerializer
 
     def get_queryset(self):
+        company_ids = _company_ids_for_user(self.request.user)
         return (
-            Contract.objects.filter(company__owner=self.request.user)
-            .select_related("client", "company")
-            .prefetch_related("versions")
+            Contract.objects
+            .filter(company_id__in=company_ids, is_active=True)
+            .select_related("company", "client", "created_by")
         )
 
-    # -------------------------
-    # CREATE
-    # -------------------------
-    def perform_create(self, serializer):
-        company = serializer.validated_data.get("company")
-        if not company:
-            raise ValidationError({"company": "This field is required."})
-        _verify_company_access(company, self.request.user)
-        serializer.save(created_by=self.request.user)
+    def perform_destroy(self, instance: Contract) -> None:
+        instance.soft_delete()
 
-    # -------------------------
-    # STATUS TRANSITION
-    # -------------------------
-    @action(detail=True, methods=["patch"], url_path="status")
-    def update_status(self, request, pk: Optional[str] = None) -> Response:
-        """
-        PATCH /contracts/{id}/status/
-
-        Enforces valid status transitions defined in ContractStatusSerializer.
-        Returns the full contract detail on success.
-
-        Valid transitions:
-            draft     → pending, cancelled
-            pending   → signed, cancelled, expired
-            signed    → completed, expired
-            completed → (none)
-            expired   → draft
-            cancelled → draft
-        """
+    @action(detail=True, methods=["post"])
+    def send(self, request: Request, pk=None) -> Response:
         contract = self.get_object()
-        serializer = ContractStatusSerializer(
-            contract,
-            data=request.data,
-            partial=True,
-            context={"request": request},
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        contract.refresh_from_db()
-        return Response(
-            ContractDetailSerializer(contract, context={"request": request}).data
-        )
-
-    # -------------------------
-    # PUBLIC PORTAL
-    # -------------------------
-    @action(
-        detail=True,
-        methods=["get"],
-        url_path="portal",
-        permission_classes=[AllowAny],
-        throttle_classes=[AnonThrottle],
-    )
-    def portal(self, request, pk: Optional[str] = None) -> Response:
-        """
-        Public client portal — retrieves contract data via a signed token.
-
-        URL:  GET /api/documents/contracts/{contract_uuid}/portal/?token={signed}
-        """
-        token = request.query_params.get("token")
-        if not token:
+        if contract.status != "draft":
             return Response(
-                {"detail": "Missing token.", "error": "missing_token"},
+                {"detail": _("Only draft contracts can be sent.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        from django.utils import timezone
+        contract.status  = "sent"
+        contract.sent_at = timezone.now()
+        contract.save(update_fields=["status", "sent_at", "updated_at"])
+        send_document_email_task.delay("contract", str(contract.pk))
+        return Response({"detail": _("Contract queued for delivery.")})
 
-        contract = get_object_or_404(
-            Contract.objects.select_related("client", "company"),
-            id=pk,
-        )
-
-        if not verify_signed_token(token, contract.id):
-            logger.warning(f"Invalid/expired portal token for contract {contract.id}")
-            return Response(
-                {"detail": "This link has expired or is invalid.", "error": "invalid_token"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        return Response(
-            ContractPortalSerializer(contract, context={"request": request}).data
-        )
-
-    # -------------------------
-    # SIGNED LINK GENERATOR
-    # -------------------------
-    @action(detail=True, methods=["get"])
-    def signed_link(self, request, pk: Optional[str] = None) -> Response:
-        """
-        Generate a time-limited signed URL for the contract client portal.
-
-        Returns:
-            {
-                "signed_url": "https://app.docflowai.com/portal/contracts/{id}?token={token}",
-                "expires_in": 86400
-            }
-        """
-        contract = self.get_object()
-        expires_in = 86400  # 24 hours
-
-        try:
-            token = generate_signed_token(contract.id, expires_in=expires_in)
-        except Exception as e:
-            logger.error(f"Failed to generate signed token for contract {contract.id}: {e}")
-            return Response(
-                {"error": "Could not generate portal link."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        frontend_url = getattr(settings, "FRONTEND_URL", "").rstrip("/")
-        url = f"{frontend_url}/portal/contracts/{contract.id}?token={token}"
-        return Response({"signed_url": url, "expires_in": expires_in})
-
-    # -------------------------
-    # PDF GENERATION
-    # -------------------------
     @action(detail=True, methods=["post"])
-    def generate_pdf(self, request, pk: Optional[str] = None) -> Response:
-        """Queue PDF generation for a contract via Celery."""
-        from .tasks import generate_contract_pdf
-
+    def sign(self, request: Request, pk=None) -> Response:
+        """POST /api/contracts/<pk>/sign/  — lightweight built-in signature."""
+        from users.permissions import get_client_ip
         contract = self.get_object()
-        try:
-            task = generate_contract_pdf.delay(str(contract.id))
-            return Response({"task_id": task.id, "status": "queued"})
-        except Exception as e:
-            logger.error(f"Failed to queue PDF for contract {contract.id}: {e}")
+        signer_name = request.data.get("name", "").strip()
+        if not signer_name:
             return Response(
-                {"error": "Failed to queue PDF generation."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"detail": _("Signer name is required.")},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+        from django.utils import timezone
+        contract.status        = "signed"
+        contract.signed_at     = timezone.now()
+        contract.signed_by_name = signer_name
+        contract.signature_ip  = get_client_ip(request)
+        contract.save(update_fields=[
+            "status", "signed_at", "signed_by_name", "signature_ip", "updated_at"
+        ])
+        return Response({"detail": _("Contract signed.")})
+
+    @action(detail=True, methods=["get"], url_path="download-pdf")
+    def download_pdf(self, request: Request, pk=None) -> Response:
+        contract = self.get_object()
+        if not contract.pdf_file:
+            generate_pdf_task.delay("contract", str(contract.pk))
+            return Response(
+                {"detail": _("PDF generation queued.")},
+                status=status.HTTP_202_ACCEPTED,
+            )
+        return Response({"url": contract.pdf_file.url})
+
+    @action(detail=True, methods=["get"], url_path="ai-review")
+    def ai_review_result(self, request: Request, pk=None) -> Response:
+        """GET /api/contracts/<pk>/ai-review/  — return stored AI analysis."""
+        contract = self.get_object()
+        return Response({"ai_review": contract.ai_review})

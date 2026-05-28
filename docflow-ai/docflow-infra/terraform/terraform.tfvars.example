@@ -1,0 +1,19 @@
+# Copy this to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars to git
+
+aws_region          = "us-east-1"
+environment         = "prod"
+domain_name         = "api.docflow.com"            # ← your actual domain
+acm_certificate_arn = "arn:aws:acm:us-east-1:XXXXXXXXXXXX:certificate/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+route53_zone_id     = "ZXXXXXXXXXXXXXXXXX"         # ← your hosted zone ID, or leave ""
+
+# Compute — scale up when traffic grows
+api_cpu           = "1024"
+api_memory        = "2048"
+api_desired_count = 2
+
+# Database
+db_instance_class = "db.t3.medium"
+
+# Redis
+redis_node_type = "cache.t3.micro"

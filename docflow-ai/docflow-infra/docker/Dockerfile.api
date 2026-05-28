@@ -1,0 +1,71 @@
+###############################################################
+# DocFlow — Production Dockerfile (API)
+# Multi-stage: builder → production
+###############################################################
+
+# ── Stage 1: Builder ──────────────────────────────────────
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# System deps for psycopg2, Pillow, etc.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    libffi-dev \
+    libssl-dev \
+    curl \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip wheel --no-cache-dir --no-deps --wheel-dir /build/wheels -r requirements.txt
+
+# ── Stage 2: Production ───────────────────────────────────
+FROM python:3.12-slim AS production
+
+ARG BUILD_DATE
+ARG GIT_SHA
+LABEL org.opencontainers.image.created="$BUILD_DATE" \
+      org.opencontainers.image.revision="$GIT_SHA" \
+      org.opencontainers.image.title="DocFlow API"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PORT=8000
+
+# Minimal runtime deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+  && rm -rf /var/lib/apt/lists/*
+
+# Non-root user
+RUN useradd -m -u 1000 docflow
+WORKDIR /app
+
+# Copy wheels from builder
+COPY --from=builder /build/wheels /wheels
+RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+
+# Copy application code
+COPY --chown=docflow:docflow . .
+
+USER docflow
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8000/health/ || exit 1
+
+# Gunicorn with Uvicorn workers (ASGI-capable)
+CMD ["gunicorn", "docflow.asgi:application", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--workers", "3", \
+     "--bind", "0.0.0.0:8000", \
+     "--timeout", "120", \
+     "--keepalive", "5", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "--log-level", "info"]

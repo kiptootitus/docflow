@@ -1,53 +1,45 @@
-# Python
+# --- Environment and Secrets ---
+.env
+.env.example
+!.env.example
+*.env
+**/.env
+**/env/
+backend/env/
+
+# --- Python / Django (Backend) ---
 __pycache__/
 *.py[cod]
-*.so
-*.egg-info/
-dist/
-build/
-.eggs/
-.env/
-venv/
-*.pyc
-
-# Django
-*.log
-local_settings.py
-db.sqlite3
-media/
-staticfiles/
-
-# Environment
-.env
-.env.local
-.env.production
-
-# Node
-node_modules/
-dist/
-.next/
-out/
-
-# Docker volumes
-postgres_data/
-redis_data/
-
-# IDE
-.vscode/
-.idea/
+*$py.class
+*.bak
 *.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# Testing
+.pytest_cache/
 .coverage
 htmlcov/
-.pytest_cache/
-coverage.xml
+backend/media/
+backend/staticfiles/
 
-# Build artifacts
-*.egg
-*.whl
-env/
-build/
+# --- Node / Vite / TypeScript (Web Frontend) ---
+node_modules/
+web/node_modules/
+dist/
+web/dist/
+.eslintcache
+*.tsbuildinfo
+
+# --- OS & IDEs ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- Project Specific & Miscellaneous ---
+# Ignores the PDFs and Word docs at the root level
+*.pdf
+*.docx
+*.doc

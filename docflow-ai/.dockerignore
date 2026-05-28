@@ -1,0 +1,30 @@
+# --- Git and IDEs ---
+.git
+.gitignore
+.idea
+.vscode
+
+# --- Python / Django (Backend) ---
+**/__pycache__
+**/*.pyc
+backend/env/
+backend/staticfiles/
+backend/media/
+.pytest_cache/
+
+# --- Node / Vite (Frontend) ---
+**/node_modules/
+**/dist/
+.npm
+npm-debug.log*
+
+# --- Local Environment and Docs ---
+.env
+*.pdf
+*.docx
+*.doc
+README.md
+
+# --- Infrastructure / Scripts (if not needed inside containers) ---
+docflow-infra/
+create-win10-vm.sh
