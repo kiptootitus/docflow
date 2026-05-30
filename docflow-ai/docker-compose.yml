@@ -5,7 +5,7 @@ services:
   # POSTGRES DATABASE
   # ----------------------------
   db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: docflow_db
     restart: unless-stopped
     environment:
@@ -46,12 +46,13 @@ services:
       - docflow_network
 
   # ----------------------------
-  # DJANGO BACKEND
+  # DJANGO BACKEND (BUILDS THE IMAGE)
   # ----------------------------
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: docflow_backend:latest
     container_name: docflow_backend
     restart: unless-stopped
     command: gunicorn docflow.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile -
@@ -71,16 +72,17 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     networks:
       - docflow_network
 
   # ----------------------------
-  # CELERY WORKER
+  # CELERY WORKER (REUSES BACKEND IMAGE)
   # ----------------------------
   celery_worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: docflow_backend:latest
     container_name: docflow_celery
     restart: unless-stopped
     command: celery -A docflow worker --loglevel=info --concurrency=4
@@ -93,6 +95,8 @@ services:
       - ./backend:/app
       - media_data:/app/media
     depends_on:
+      backend:
+        condition: service_started
       db:
         condition: service_healthy
       redis:
@@ -101,12 +105,10 @@ services:
       - docflow_network
 
   # ----------------------------
-  # CELERY BEAT
+  # CELERY BEAT (REUSES BACKEND IMAGE)
   # ----------------------------
   celery_beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: docflow_backend:latest
     container_name: docflow_beat
     restart: unless-stopped
     command: celery -A docflow beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
@@ -118,6 +120,8 @@ services:
     volumes:
       - ./backend:/app
     depends_on:
+      backend:
+        condition: service_started
       db:
         condition: service_healthy
       redis:
@@ -126,12 +130,10 @@ services:
       - docflow_network
 
   # ----------------------------
-  # FLOWER (CELERY MONITOR)
+  # FLOWER (REUSES BACKEND IMAGE)
   # ----------------------------
   flower:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: docflow_backend:latest
     container_name: docflow_flower
     restart: unless-stopped
     command: celery -A docflow flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
@@ -148,7 +150,10 @@ services:
       - docflow_network
 
   # ----------------------------
-  # REACT FRONTEND (FIXED NAME)
+  # REACT FRONTEND
+  # ----------------------------
+  # ----------------------------
+  # REACT FRONTEND
   # ----------------------------
   frontend:
     build:
@@ -162,11 +167,11 @@ services:
     volumes:
       - ./web:/app
       - /app/node_modules
+      - static_data:/static/frontend   
     ports:
       - "3000:3000"
     networks:
       - docflow_network
-
   # ----------------------------
   # NGINX
   # ----------------------------

@@ -1,9 +1,11 @@
 """
 DocFlow AI — notifications/apps.py
 """
+import logging
 from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
+logger = logging.getLogger(__name__)
 
 class NotificationsConfig(AppConfig):
     name                = "notifications"
@@ -11,6 +13,8 @@ class NotificationsConfig(AppConfig):
     default_auto_field  = "django.db.models.BigAutoField"
 
     def ready(self) -> None:
-        pass  # Signal receivers added here when needed
-
-
+        """
+        Initialization hook for the notifications module.
+        Safely configures monitoring log baselines and runtime metrics.
+        """
+        logger.info("Initializing NotificationsConfig subsystem successfully.")

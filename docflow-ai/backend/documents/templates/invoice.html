@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Invoice {{ doc.number }}</title>
+<style>
+/* ── Page Setup ──────────────────────────────────────────────────────── */
+@page {
+  size: A4;
+  margin: 0;
+  @bottom-center {
+    content: "Page " counter(page) " of " counter(pages);
+    font-size: 8pt;
+    color: #9CA3AF;
+    font-family: var(--font-body);
+    padding-bottom: 8px;
+  }
+}
+
+/* ── CSS Variables (overridden by pdf_generator.py) ─────────────────── */
+:root {
+  --primary:       #1A56DB;
+  --primary-dark:  #1E40AF;
+  --primary-light: #EFF6FF;
+  --accent:        #F59E0B;
+  --text:          #111827;
+  --muted:         #6B7280;
+  --border:        #E5E7EB;
+  --row-alt:       #F9FAFB;
+  --danger:        #DC2626;
+  --success:       #16A34A;
+  --font-body:     'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-size:     9.5pt;
+}
+
+/* ── Reset ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size);
+  color: var(--text);
+  line-height: 1.5;
+  background: #fff;
+}
+
+/* ── Wrapper ─────────────────────────────────────────────────────────── */
+.page {
+  padding: 0;
+  min-height: 297mm;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header Band ─────────────────────────────────────────────────────── */
+.header {
+  background: var(--primary);
+  padding: 28px 36px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.header .logo img {
+  max-height: 52px;
+  max-width: 160px;
+  object-fit: contain;
+}
+.header .logo .company-name {
+  font-size: 18pt;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.header .doc-type {
+  text-align: right;
+}
+.header .doc-type h1 {
+  font-size: 28pt;
+  font-weight: 800;
+  color: rgba(255,255,255,0.95);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.header .doc-type .doc-number {
+  font-size: 11pt;
+  color: rgba(255,255,255,0.75);
+  margin-top: 4px;
+}
+
+/* ── Status Strip ────────────────────────────────────────────────────── */
+.status-strip {
+  background: var(--primary-light);
+  border-bottom: 2px solid var(--primary);
+  padding: 6px 36px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+.status-draft   { background:#F3F4F6; color:#374151; }
+.status-sent    { background:#DBEAFE; color:#1D4ED8; }
+.status-viewed  { background:#E0F2FE; color:#0369A1; }
+.status-partial { background:#FEF3C7; color:#92400E; }
+.status-paid    { background:#D1FAE5; color:#065F46; }
+.status-overdue { background:#FEE2E2; color:#991B1B; }
+.status-void    { background:#F3F4F6; color:#9CA3AF; }
+.status-cancelled { background:#F3F4F6; color:#9CA3AF; }
+.meta-pill {
+  font-size: 8pt;
+  color: var(--muted);
+}
+.meta-pill strong { color: var(--text); }
+
+/* ── Body Content ────────────────────────────────────────────────────── */
+.body { padding: 28px 36px; flex: 1; }
+
+/* ── Parties ─────────────────────────────────────────────────────────── */
+.parties {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 24px;
+}
+.party { flex: 1; }
+.party-label {
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1.5px solid var(--border);
+}
+.party-name {
+  font-size: 11pt;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.party p {
+  color: var(--muted);
+  font-size: 8.5pt;
+  line-height: 1.6;
+}
+.party .vat-tag {
+  font-size: 7.5pt;
+  background: var(--row-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+/* ── Details Grid ────────────────────────────────────────────────────── */
+.details-grid {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.detail-item {
+  flex: 1;
+  padding: 10px 14px;
+  border-right: 1px solid var(--border);
+}
+.detail-item:last-child { border-right: none; }
+.detail-label {
+  font-size: 7pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.detail-value {
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: var(--text);
+}
+.detail-value.overdue { color: var(--danger); }
+
+/* ── Subject ─────────────────────────────────────────────────────────── */
+.subject-line {
+  background: var(--row-alt);
+  border-left: 3px solid var(--primary);
+  padding: 8px 12px;
+  border-radius: 0 4px 4px 0;
+  font-size: 9pt;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+/* ── Line Items Table ────────────────────────────────────────────────── */
+.items-section { margin-bottom: 20px; }
+.section-title {
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+table.items {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+table.items thead tr {
+  background: var(--primary);
+  color: #fff;
+}
+table.items thead th {
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 7.5pt;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+table.items thead th.right { text-align: right; }
+table.items tbody tr.even { background: var(--row-alt); }
+table.items tbody tr.odd  { background: #fff; }
+table.items tbody td {
+  padding: 7px 10px;
+  vertical-align: top;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+table.items tbody td.right  { text-align: right; }
+table.items tbody td.center { text-align: center; }
+table.items tbody td.muted  { color: var(--muted); font-size: 8pt; }
+table.items tbody td.mono   { font-family: 'Courier New', monospace; }
+table.items .item-type-badge {
+  font-size: 6.5pt;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  display: inline-block;
+}
+table.items .type-service  { background:#DBEAFE; color:#1D4ED8; }
+table.items .type-product  { background:#D1FAE5; color:#065F46; }
+table.items .type-expense  { background:#FEF3C7; color:#92400E; }
+table.items .type-discount { background:#FEE2E2; color:#991B1B; }
+table.items .type-other    { background:#F3F4F6; color:#374151; }
+table.items tbody tr.discount-row td { color: var(--danger); }
+
+/* ── Totals ──────────────────────────────────────────────────────────── */
+.totals-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+.totals-box {
+  width: 260px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.totals-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 12px;
+  font-size: 8.5pt;
+  border-bottom: 1px solid var(--border);
+}
+.totals-row:last-child { border-bottom: none; }
+.totals-row .label { color: var(--muted); }
+.totals-row .value { font-family: 'Courier New', monospace; font-weight: 600; }
+.totals-row.grand {
+  background: var(--primary);
+  color: #fff;
+  font-size: 10pt;
+  font-weight: 700;
+}
+.totals-row.grand .label,
+.totals-row.grand .value { color: #fff; }
+.totals-row.balance {
+  background: var(--primary-light);
+  font-weight: 700;
+  font-size: 9pt;
+}
+.totals-row.balance .value { color: var(--primary); }
+.totals-row.balance.paid .value { color: var(--success); }
+
+/* ── Payment Link ────────────────────────────────────────────────────── */
+.payment-cta {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+.payment-btn {
+  background: var(--primary);
+  color: #fff;
+  padding: 9px 20px;
+  border-radius: 6px;
+  font-size: 9pt;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* ── Notes & Terms ───────────────────────────────────────────────────── */
+.notes-section {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.notes-block { flex: 1; }
+.notes-label {
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.notes-content {
+  font-size: 8pt;
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: var(--row-alt);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+.footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding: 12px 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-left {
+  font-size: 7.5pt;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.footer-right {
+  text-align: right;
+}
+.stamp-wrap {
+  width: 80px;
+  height: 80px;
+  opacity: 0.85;
+}
+.stamp-wrap img { width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═══════════════════════════════ HEADER ═════════════════════════════ -->
+  <div class="header">
+    <div class="logo">
+      {% if logo_url %}
+        <img src="{{ logo_url }}" alt="{{ company.name }}">
+      {% else %}
+        <div class="company-name">{{ company.name }}</div>
+      {% endif %}
+    </div>
+    <div class="doc-type">
+      <h1>INVOICE</h1>
+      <div class="doc-number">{{ doc.number }}</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ STATUS STRIP ═══════════════════════════ -->
+  <div class="status-strip">
+    <span class="status-pill status-{{ doc.status }}">{{ doc.get_status_display }}</span>
+    <span class="meta-pill"><strong>Issued:</strong> {{ doc.issue_date }}</span>
+    {% if doc.due_date %}
+    <span class="meta-pill {% if doc.is_overdue %}overdue{% endif %}">
+      <strong>Due:</strong> {{ doc.due_date }}{% if doc.is_overdue %} — OVERDUE{% endif %}
+    </span>
+    {% endif %}
+    <span class="meta-pill"><strong>Currency:</strong> {{ doc.currency }}</span>
+  </div>
+
+  <!-- ═════════════════════════════ BODY ════════════════════════════════ -->
+  <div class="body">
+
+    <!-- Parties -->
+    <div class="parties">
+      <!-- FROM -->
+      <div class="party">
+        <div class="party-label">From</div>
+        <div class="party-name">{{ company.name }}</div>
+        {% if company.email %}<p>{{ company.email }}</p>{% endif %}
+        {% if company.phone %}<p>{{ company.phone }}</p>{% endif %}
+        {% if company.full_address %}<p>{{ company.full_address }}</p>{% endif %}
+        {% if vat and vat.vat_number %}
+          <span class="vat-tag">VAT: {{ vat.vat_number }}</span>
+        {% endif %}
+      </div>
+
+      <!-- BILL TO -->
+      <div class="party">
+        <div class="party-label">Bill To</div>
+        <div class="party-name">{{ doc.client_formal_name }}</div>
+        {% if doc.client_email %}<p>{{ doc.client_email }}</p>{% endif %}
+        {% if doc.client_phone %}<p>{{ doc.client_phone }}</p>{% endif %}
+        {% if doc.client_address %}<p>{{ doc.client_address }}</p>{% endif %}
+        {% if doc.client_vat_number %}
+          <span class="vat-tag">VAT: {{ doc.client_vat_number }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Details grid -->
+    <div class="details-grid">
+      <div class="detail-item">
+        <div class="detail-label">Invoice No.</div>
+        <div class="detail-value">{{ doc.number }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Issue Date</div>
+        <div class="detail-value">{{ doc.issue_date }}</div>
+      </div>
+      {% if doc.due_date %}
+      <div class="detail-item">
+        <div class="detail-label">Due Date</div>
+        <div class="detail-value {% if doc.is_overdue %}overdue{% endif %}">{{ doc.due_date }}</div>
+      </div>
+      {% endif %}
+      <div class="detail-item">
+        <div class="detail-label">Currency</div>
+        <div class="detail-value">{{ doc.currency }}</div>
+      </div>
+      {% if doc.stripe_payment_intent_id %}
+      <div class="detail-item">
+        <div class="detail-label">Payment Ref</div>
+        <div class="detail-value">{{ doc.stripe_payment_intent_id|slice:":16" }}…</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Subject -->
+    {% if doc.subject %}
+    <div class="subject-line">{{ doc.subject }}</div>
+    {% endif %}
+
+    <!-- ─── Line Items ──────────────────────────────────────────────────── -->
+    {% if line_items %}
+    <div class="items-section">
+      <div class="section-title">Line Items</div>
+      <table class="items">
+        <thead>
+          <tr>
+            <th style="width:28px">#</th>
+            <th>Description</th>
+            <th class="right" style="width:80px">Qty{% if line_items.0.unit_label %} / Unit{% endif %}</th>
+            <th class="right" style="width:90px">Unit Price</th>
+            <th class="right" style="width:70px">Disc %</th>
+            <th class="right" style="width:90px">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in line_items %}
+          <tr class="{% cycle 'odd' 'even' %} {% if item.item_type == 'discount' %}discount-row{% endif %}">
+            <td class="center muted">{{ forloop.counter }}</td>
+            <td>
+              <span class="item-type-badge type-{{ item.item_type }}">{{ item.item_type }}</span>
+              <br>
+              {{ item.description }}
+            </td>
+            <td class="right mono">
+              {{ item.quantity }}
+              {% if item.unit_label %}
+                <span style="color:var(--muted);font-size:7.5pt">×{{ item.unit_of_measure }}{{ item.unit_label }}</span>
+              {% endif %}
+            </td>
+            <td class="right mono">{{ item.unit_price|floatformat:2 }}</td>
+            <td class="right muted">
+              {% if item.discount_percent %}{{ item.discount_percent }}%{% else %}—{% endif %}
+            </td>
+            <td class="right mono" style="font-weight:600">
+              {% if item.item_type == 'discount' %}-{% endif %}{{ item.line_total|floatformat:2 }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- ─── Totals ──────────────────────────────────────────────────────── -->
+    <div class="totals-wrap">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span class="label">Subtotal</span>
+          <span class="value">{{ doc.currency }} {{ doc.subtotal|floatformat:2 }}</span>
+        </div>
+        {% if doc.discount_amount %}
+        <div class="totals-row">
+          <span class="label">Discount</span>
+          <span class="value" style="color:var(--danger)">- {{ doc.currency }} {{ doc.discount_amount|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        {% if doc.tax_amount %}
+        <div class="totals-row">
+          <span class="label">
+            {% if vat %}{{ vat.vat_label|default:"VAT" }} ({{ vat.vat_rate }}%)
+            {% else %}Tax{% endif %}
+          </span>
+          <span class="value">{{ doc.currency }} {{ doc.tax_amount|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        <div class="totals-row grand">
+          <span class="label">TOTAL</span>
+          <span class="value">{{ doc.currency }} {{ doc.total|floatformat:2 }}</span>
+        </div>
+        {% if doc.amount_paid %}
+        <div class="totals-row">
+          <span class="label">Amount Paid</span>
+          <span class="value" style="color:var(--success)">{{ doc.currency }} {{ doc.amount_paid|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        <div class="totals-row balance {% if doc.balance_due == 0 %}paid{% endif %}">
+          <span class="label">
+            {% if doc.balance_due == 0 %}✓ Paid in Full{% else %}Balance Due{% endif %}
+          </span>
+          <span class="value">{{ doc.currency }} {{ doc.balance_due|floatformat:2 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pay Now CTA -->
+    {% if doc.stripe_payment_link_url and doc.balance_due > 0 %}
+    <div class="payment-cta">
+      <a href="{{ doc.stripe_payment_link_url }}" class="payment-btn">💳 Pay Now via Stripe</a>
+    </div>
+    {% endif %}
+
+    <!-- Notes & Terms -->
+    {% if doc.notes or doc.terms %}
+    <div class="notes-section">
+      {% if doc.notes %}
+      <div class="notes-block">
+        <div class="notes-label">Notes</div>
+        <div class="notes-content">{{ doc.notes }}</div>
+      </div>
+      {% endif %}
+      {% if doc.terms %}
+      <div class="notes-block">
+        <div class="notes-label">Terms &amp; Conditions</div>
+        <div class="notes-content">{{ doc.terms }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div><!-- /body -->
+
+  <!-- ═══════════════════════════════ FOOTER ═════════════════════════════ -->
+  <div class="footer">
+    <div class="footer-left">
+      <strong>{{ company.name }}</strong><br>
+      {% if company.email %}{{ company.email }}{% endif %}
+      {% if company.phone %} · {{ company.phone }}{% endif %}<br>
+      {% if branding and branding.invoice_footer_text %}{{ branding.invoice_footer_text }}{% endif %}
+    </div>
+    {% if stamp_url %}
+    <div class="footer-right">
+      <div class="stamp-wrap"><img src="{{ stamp_url }}" alt="Stamp"></div>
+    </div>
+    {% elif sig_url %}
+    <div class="footer-right">
+      <img src="{{ sig_url }}" style="max-height:50px;max-width:120px;object-fit:contain" alt="Signature">
+    </div>
+    {% endif %}
+  </div>
+
+</div><!-- /page -->
+</body>
+</html>

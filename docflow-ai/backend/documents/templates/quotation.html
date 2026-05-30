@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quotation {{ doc.number }}</title>
+<style>
+/* ── Page Setup ──────────────────────────────────────────────────────── */
+@page {
+  size: A4;
+  margin: 0;
+  @bottom-center {
+    content: "Page " counter(page) " of " counter(pages);
+    font-size: 8pt; color: #9CA3AF;
+    font-family: var(--font-body);
+    padding-bottom: 8px;
+  }
+}
+:root {
+  --primary:       #0891B2;   /* teal — distinct from invoice blue */
+  --primary-dark:  #0E7490;
+  --primary-light: #ECFEFF;
+  --accent:        #F59E0B;
+  --text:          #111827;
+  --muted:         #6B7280;
+  --border:        #E5E7EB;
+  --row-alt:       #F9FAFB;
+  --success:       #16A34A;
+  --warning:       #D97706;
+  --danger:        #DC2626;
+  --font-body:     'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-size:     9.5pt;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size);
+  color: var(--text);
+  line-height: 1.5;
+  background: #fff;
+}
+.page { padding: 0; min-height: 297mm; display: flex; flex-direction: column; }
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.header {
+  background: var(--primary);
+  padding: 28px 36px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.header .logo img { max-height: 52px; max-width: 160px; object-fit: contain; }
+.header .logo .company-name { font-size: 18pt; font-weight: 700; color: #fff; }
+.header .doc-type { text-align: right; }
+.header .doc-type h1 {
+  font-size: 28pt; font-weight: 800;
+  color: rgba(255,255,255,0.95); letter-spacing: 1px; line-height: 1;
+}
+.header .doc-type .doc-number { font-size: 11pt; color: rgba(255,255,255,0.75); margin-top: 4px; }
+
+/* ── Validity Banner ─────────────────────────────────────────────────── */
+.validity-banner {
+  padding: 6px 36px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 2px solid var(--border);
+}
+.validity-banner.valid     { background: var(--primary-light); border-bottom-color: var(--primary); }
+.validity-banner.expiring  { background: #FFFBEB; border-bottom-color: var(--warning); }
+.validity-banner.expired   { background: #FFF1F2; border-bottom-color: var(--danger); }
+.validity-banner.accepted  { background: #F0FDF4; border-bottom-color: var(--success); }
+.validity-banner.declined  { background: #FFF1F2; border-bottom-color: var(--danger); }
+
+.status-pill {
+  font-size: 8pt; font-weight: 700; letter-spacing: 0.5px;
+  padding: 3px 10px; border-radius: 9999px; text-transform: uppercase;
+}
+.status-draft    { background:#F3F4F6; color:#374151; }
+.status-sent     { background:#DBEAFE; color:#1D4ED8; }
+.status-viewed   { background:#E0F2FE; color:#0369A1; }
+.status-accepted { background:#D1FAE5; color:#065F46; }
+.status-declined { background:#FEE2E2; color:#991B1B; }
+.status-expired  { background:#FEF3C7; color:#92400E; }
+.meta-pill { font-size: 8pt; color: var(--muted); }
+.meta-pill strong { color: var(--text); }
+.validity-countdown {
+  margin-left: auto;
+  font-size: 8.5pt;
+  font-weight: 600;
+}
+.validity-countdown.ok      { color: var(--success); }
+.validity-countdown.warning { color: var(--warning); }
+.validity-countdown.expired { color: var(--danger); }
+
+/* ── Body ────────────────────────────────────────────────────────────── */
+.body { padding: 28px 36px; flex: 1; }
+
+/* ── Parties ─────────────────────────────────────────────────────────── */
+.parties { display: flex; gap: 32px; margin-bottom: 24px; }
+.party { flex: 1; }
+.party-label {
+  font-size: 7.5pt; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1.5px solid var(--border);
+}
+.party-name { font-size: 11pt; font-weight: 700; margin-bottom: 3px; }
+.party p { color: var(--muted); font-size: 8.5pt; line-height: 1.6; }
+.party .vat-tag {
+  font-size: 7.5pt; background: var(--row-alt);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 1px 6px; display: inline-block; margin-top: 4px; color: var(--muted);
+}
+
+/* ── Details Grid ────────────────────────────────────────────────────── */
+.details-grid {
+  display: flex; border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; margin-bottom: 24px;
+}
+.detail-item {
+  flex: 1; padding: 10px 14px; border-right: 1px solid var(--border);
+}
+.detail-item:last-child { border-right: none; }
+.detail-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 3px; }
+.detail-value { font-size: 9.5pt; font-weight: 600; color: var(--text); }
+.detail-value.warning { color: var(--warning); }
+.detail-value.expired { color: var(--danger); }
+
+/* ── Subject ─────────────────────────────────────────────────────────── */
+.subject-line {
+  background: var(--row-alt); border-left: 3px solid var(--primary);
+  padding: 8px 12px; border-radius: 0 4px 4px 0;
+  font-size: 9pt; margin-bottom: 20px;
+}
+
+/* ── Line Items Table ────────────────────────────────────────────────── */
+.section-title {
+  font-size: 7.5pt; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--muted); margin-bottom: 8px;
+}
+table.items { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+table.items thead tr { background: var(--primary); color: #fff; }
+table.items thead th {
+  padding: 8px 10px; text-align: left; font-weight: 600;
+  font-size: 7.5pt; letter-spacing: 0.5px; white-space: nowrap;
+}
+table.items thead th.right { text-align: right; }
+table.items tbody tr.even { background: var(--row-alt); }
+table.items tbody tr.odd  { background: #fff; }
+table.items tbody td {
+  padding: 7px 10px; vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+table.items tbody td.right  { text-align: right; }
+table.items tbody td.center { text-align: center; }
+table.items tbody td.muted  { color: var(--muted); font-size: 8pt; }
+table.items tbody td.mono   { font-family: 'Courier New', monospace; }
+.item-type-badge {
+  font-size: 6.5pt; font-weight: 700; padding: 1px 5px;
+  border-radius: 3px; text-transform: uppercase; display: inline-block;
+}
+.type-service  { background:#DBEAFE; color:#1D4ED8; }
+.type-product  { background:#D1FAE5; color:#065F46; }
+.type-expense  { background:#FEF3C7; color:#92400E; }
+.type-discount { background:#FEE2E2; color:#991B1B; }
+.type-other    { background:#F3F4F6; color:#374151; }
+.discount-row td { color: var(--danger); }
+
+/* ── Totals ──────────────────────────────────────────────────────────── */
+.totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 24px; }
+.totals-box { width: 260px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.totals-row { display: flex; justify-content: space-between; padding: 7px 12px; font-size: 8.5pt; border-bottom: 1px solid var(--border); }
+.totals-row:last-child { border-bottom: none; }
+.totals-row .label { color: var(--muted); }
+.totals-row .value { font-family: 'Courier New', monospace; font-weight: 600; }
+.totals-row.grand { background: var(--primary); color: #fff; font-size: 10pt; font-weight: 700; }
+.totals-row.grand .label, .totals-row.grand .value { color: #fff; }
+
+/* ── Validity Box ────────────────────────────────────────────────────── */
+.validity-box {
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+  margin-bottom: 20px;
+  background: var(--row-alt);
+}
+.validity-box .vb-label { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 4px; }
+.validity-box .vb-date  { font-size: 12pt; font-weight: 700; color: var(--primary); }
+.validity-box .vb-days  { font-size: 8pt; color: var(--muted); margin-top: 2px; }
+
+/* ── Notes ───────────────────────────────────────────────────────────── */
+.notes-section { display: flex; gap: 20px; margin-bottom: 20px; }
+.notes-block { flex: 1; }
+.notes-label { font-size: 7.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 5px; }
+.notes-content { font-size: 8pt; line-height: 1.6; white-space: pre-wrap; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; background: var(--row-alt); }
+
+/* ── Acceptance Box ──────────────────────────────────────────────────── */
+.acceptance-box {
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+.acceptance-title {
+  font-size: 9pt; font-weight: 700; color: var(--primary);
+  margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.acceptance-row {
+  display: flex; gap: 24px; margin-top: 8px;
+}
+.acceptance-field { flex: 1; }
+.acceptance-field .af-label { font-size: 7.5pt; color: var(--muted); margin-bottom: 20px; }
+.acceptance-field .af-line  {
+  border-bottom: 1px solid var(--text); padding-bottom: 2px;
+  font-size: 8pt; color: var(--muted); min-width: 120px;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+.footer {
+  margin-top: auto; border-top: 1px solid var(--border);
+  padding: 12px 36px; display: flex; justify-content: space-between; align-items: center;
+}
+.footer-left { font-size: 7.5pt; color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      {% if logo_url %}<img src="{{ logo_url }}" alt="{{ company.name }}">
+      {% else %}<div class="company-name">{{ company.name }}</div>{% endif %}
+    </div>
+    <div class="doc-type">
+      <h1>QUOTATION</h1>
+      <div class="doc-number">{{ doc.number }}</div>
+    </div>
+  </div>
+
+  <!-- VALIDITY BANNER -->
+  <div class="validity-banner
+    {% if doc.status == 'accepted' %}accepted
+    {% elif doc.status == 'declined' or doc.is_expired %}expired
+    {% elif doc.days_until_expiry is not None and doc.days_until_expiry <= 3 %}expiring
+    {% else %}valid{% endif %}">
+
+    <span class="status-pill status-{{ doc.status }}">{{ doc.get_status_display }}</span>
+    <span class="meta-pill"><strong>Issued:</strong> {{ doc.issue_date }}</span>
+    {% if doc.valid_until %}
+    <span class="meta-pill"><strong>Valid Until:</strong> {{ doc.valid_until }}</span>
+    {% endif %}
+    <span class="meta-pill"><strong>Currency:</strong> {{ doc.currency }}</span>
+
+    {% if doc.days_until_expiry is not None %}
+    <span class="validity-countdown
+      {% if doc.is_expired %}expired
+      {% elif doc.days_until_expiry <= 3 %}warning
+      {% else %}ok{% endif %}">
+      {% if doc.is_expired %}Expired
+      {% elif doc.days_until_expiry == 0 %}Expires today
+      {% elif doc.days_until_expiry == 1 %}1 day left
+      {% else %}{{ doc.days_until_expiry }} days left{% endif %}
+    </span>
+    {% endif %}
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- Parties -->
+    <div class="parties">
+      <div class="party">
+        <div class="party-label">Prepared By</div>
+        <div class="party-name">{{ company.name }}</div>
+        {% if company.email %}<p>{{ company.email }}</p>{% endif %}
+        {% if company.phone %}<p>{{ company.phone }}</p>{% endif %}
+        {% if company.full_address %}<p>{{ company.full_address }}</p>{% endif %}
+        {% if vat and vat.vat_number %}<span class="vat-tag">VAT: {{ vat.vat_number }}</span>{% endif %}
+      </div>
+      <div class="party">
+        <div class="party-label">Prepared For</div>
+        <div class="party-name">{{ doc.client_formal_name }}</div>
+        {% if doc.client_email %}<p>{{ doc.client_email }}</p>{% endif %}
+        {% if doc.client_phone %}<p>{{ doc.client_phone }}</p>{% endif %}
+        {% if doc.client_address %}<p>{{ doc.client_address }}</p>{% endif %}
+        {% if doc.client_vat_number %}<span class="vat-tag">VAT: {{ doc.client_vat_number }}</span>{% endif %}
+      </div>
+    </div>
+
+    <!-- Details grid -->
+    <div class="details-grid">
+      <div class="detail-item">
+        <div class="detail-label">Quotation No.</div>
+        <div class="detail-value">{{ doc.number }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Issue Date</div>
+        <div class="detail-value">{{ doc.issue_date }}</div>
+      </div>
+      {% if doc.valid_until %}
+      <div class="detail-item">
+        <div class="detail-label">Valid Until</div>
+        <div class="detail-value
+          {% if doc.is_expired %}expired
+          {% elif doc.days_until_expiry is not None and doc.days_until_expiry <= 3 %}warning{% endif %}">
+          {{ doc.valid_until }}
+        </div>
+      </div>
+      {% endif %}
+      <div class="detail-item">
+        <div class="detail-label">Currency</div>
+        <div class="detail-value">{{ doc.currency }}</div>
+      </div>
+    </div>
+
+    {% if doc.subject %}
+    <div class="subject-line">{{ doc.subject }}</div>
+    {% endif %}
+
+    <!-- Line Items -->
+    {% if line_items %}
+    <div style="margin-bottom:20px">
+      <div class="section-title">Scope of Work &amp; Pricing</div>
+      <table class="items">
+        <thead>
+          <tr>
+            <th style="width:28px">#</th>
+            <th>Description</th>
+            <th class="right" style="width:80px">Qty</th>
+            <th class="right" style="width:90px">Unit Price</th>
+            <th class="right" style="width:70px">Disc %</th>
+            <th class="right" style="width:90px">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in line_items %}
+          <tr class="{% cycle 'odd' 'even' %} {% if item.item_type == 'discount' %}discount-row{% endif %}">
+            <td class="center muted">{{ forloop.counter }}</td>
+            <td>
+              <span class="item-type-badge type-{{ item.item_type }}">{{ item.item_type }}</span><br>
+              {{ item.description }}
+            </td>
+            <td class="right mono">
+              {{ item.quantity }}
+              {% if item.unit_label %}
+                <span style="color:var(--muted);font-size:7.5pt">{{ item.unit_label }}</span>
+              {% endif %}
+            </td>
+            <td class="right mono">{{ item.unit_price|floatformat:2 }}</td>
+            <td class="right muted">
+              {% if item.discount_percent %}{{ item.discount_percent }}%{% else %}—{% endif %}
+            </td>
+            <td class="right mono" style="font-weight:600">
+              {% if item.item_type == 'discount' %}-{% endif %}{{ item.line_total|floatformat:2 }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Totals -->
+    <div class="totals-wrap">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span class="label">Subtotal</span>
+          <span class="value">{{ doc.currency }} {{ doc.subtotal|floatformat:2 }}</span>
+        </div>
+        {% if doc.discount_amount %}
+        <div class="totals-row">
+          <span class="label">Discount</span>
+          <span class="value" style="color:var(--danger)">- {{ doc.currency }} {{ doc.discount_amount|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        {% if doc.tax_amount %}
+        <div class="totals-row">
+          <span class="label">{% if vat %}{{ vat.vat_label|default:"VAT" }} ({{ vat.vat_rate }}%){% else %}Tax{% endif %}</span>
+          <span class="value">{{ doc.currency }} {{ doc.tax_amount|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        <div class="totals-row grand">
+          <span class="label">ESTIMATED TOTAL</span>
+          <span class="value">{{ doc.currency }} {{ doc.total|floatformat:2 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validity reminder box -->
+    {% if doc.valid_until and not doc.is_expired and doc.status != 'accepted' %}
+    <div class="validity-box">
+      <div class="vb-label">This quotation is valid until</div>
+      <div class="vb-date">{{ doc.valid_until }}</div>
+      {% if doc.days_until_expiry is not None %}
+      <div class="vb-days">{{ doc.days_until_expiry }} days remaining</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Notes & Terms -->
+    {% if doc.notes or doc.terms %}
+    <div class="notes-section">
+      {% if doc.notes %}
+      <div class="notes-block">
+        <div class="notes-label">Notes</div>
+        <div class="notes-content">{{ doc.notes }}</div>
+      </div>
+      {% endif %}
+      {% if doc.terms %}
+      <div class="notes-block">
+        <div class="notes-label">Terms &amp; Conditions</div>
+        <div class="notes-content">{{ doc.terms }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Acceptance Section -->
+    {% if doc.status not in 'accepted,declined,expired' %}
+    <div class="acceptance-box">
+      <div class="acceptance-title">Acceptance &amp; Authorisation</div>
+      <p style="font-size:8pt;color:var(--muted);margin-bottom:10px">
+        By signing below, you confirm acceptance of this quotation and all terms listed above.
+      </p>
+      <div class="acceptance-row">
+        <div class="acceptance-field">
+          <div class="af-label">Authorised Signature</div>
+          <div class="af-line">&nbsp;</div>
+        </div>
+        <div class="acceptance-field">
+          <div class="af-label">Full Name (Print)</div>
+          <div class="af-line">&nbsp;</div>
+        </div>
+        <div class="acceptance-field">
+          <div class="af-label">Date</div>
+          <div class="af-line">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+    {% elif doc.status == 'accepted' %}
+    <div style="border:2px solid var(--success);border-radius:8px;padding:14px;text-align:center;margin-bottom:20px;background:#F0FDF4">
+      <div style="font-size:14pt;color:var(--success);font-weight:700">✓ ACCEPTED</div>
+      {% if doc.accepted_at %}
+      <div style="font-size:8pt;color:var(--muted);margin-top:4px">Accepted on {{ doc.accepted_at }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div><!-- /body -->
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      <strong>{{ company.name }}</strong><br>
+      {% if company.email %}{{ company.email }}{% endif %}
+      {% if company.phone %} · {{ company.phone }}{% endif %}
+      {% if branding and branding.quotation_footer_text %}<br>{{ branding.quotation_footer_text }}{% endif %}
+    </div>
+    {% if stamp_url %}
+    <img src="{{ stamp_url }}" style="height:60px;width:60px;object-fit:contain;opacity:0.8" alt="Stamp">
+    {% endif %}
+  </div>
+
+</div>
+</body>
+</html>

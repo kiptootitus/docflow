@@ -25,10 +25,10 @@ export default function Verify2FA() {
     setLoading(true);
     try {
       // Direct integration with the new backend flow
-      const response = await authApi.verifyTOTPLogin(email, code);
+      const response = await authApi.verifyTotp({ email, token: code });
 
       // Load user profiles seamlessly into client storage memory
-      await handleLoginSuccess(response.data.access, response.data.refresh);
+      await handleLoginSuccess({ access: response.data.access, refresh: response.data.refresh });
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.response?.data?.token?.[0] || err.response?.data?.detail || "Invalid code. Please try again.");

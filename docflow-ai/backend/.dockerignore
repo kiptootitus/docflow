@@ -7,5 +7,19 @@ __pycache__
 media/
 node_modules/
 .env
-.dockerignore
+.dockerignore# .dockerignore
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+media/
+staticfiles/
+.env
 README.md

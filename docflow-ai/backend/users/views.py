@@ -52,11 +52,11 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 class AuthThrottle(AnonRateThrottle):
-    rate = "10/hour"
+    rate = "1/hour"
 
 
 class SensitiveActionThrottle(UserRateThrottle):
-    rate = "20/hour"
+    rate = "1/hour"
 
 
 # ---------------------------------------------------------------------------

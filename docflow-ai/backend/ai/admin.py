@@ -11,5 +11,5 @@ class AiReviewAdmin(admin.ModelAdmin):
 
 @admin.register(AiGeneration)
 class AiGenerationAdmin(admin.ModelAdmin):
-    list_display = ["doc_type", "company", "model_used", "tokens_used", "created_at"]
-    list_filter = ["doc_type", "model_used"]
+    list_display = ['model_used', 'created_by', 'tokens_used', 'created_at']
+    list_filter = ['model_used', 'company']

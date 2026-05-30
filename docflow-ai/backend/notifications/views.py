@@ -1,38 +1,13 @@
 """
 DocFlow AI — notifications/views.py
-
-REST API views for the notifications app.
-
-Endpoints:
-  GET    /notifications/                         NotificationListView
-  GET    /notifications/<pk>/                    NotificationDetailView
-  POST   /notifications/<pk>/read/               MarkReadView
-  POST   /notifications/read-all/               MarkAllReadView
-  DELETE /notifications/<pk>/                    DeleteNotificationView
-  GET    /notifications/unread-count/            UnreadCountView
-
-  GET    /notifications/preferences/            PreferenceListView
-  PATCH  /notifications/preferences/<category>/ PreferenceUpdateView
-
-  GET    /notifications/push-tokens/            PushTokenListView
-  POST   /notifications/push-tokens/            PushTokenCreateView
-  PATCH  /notifications/push-tokens/<pk>/       PushTokenUpdateView
-  DELETE /notifications/push-tokens/<pk>/       PushTokenDeleteView
-
-Design:
-  • All endpoints require IsActiveUser (authenticated + not soft-deleted).
-  • Users can only see/modify their own notifications and preferences.
-  • No cross-user access — queryset always filtered by request.user.
-  • Bulk mark-all-read uses .update() for efficiency (no per-row saves).
 """
-
 from __future__ import annotations
 
 import logging
 
 from django.db.models import QuerySet
 from django.utils.translation import gettext_lazy as _
-from rest_framework import generics, serializers as drf_serializers, status
+from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
@@ -59,25 +34,11 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Throttles
-# ---------------------------------------------------------------------------
-
 class PushTokenThrottle(UserRateThrottle):
-    """Limit token registration to prevent abuse."""
     rate = "30/hour"
 
 
-# ---------------------------------------------------------------------------
-# Notification views
-# ---------------------------------------------------------------------------
-
 class NotificationListView(generics.ListAPIView):
-    """
-    GET /notifications/
-    Returns the authenticated user's notifications, newest first.
-    Supports ?unread_only=true and ?category=<value> filters.
-    """
     permission_classes = [IsActiveUser]
     serializer_class   = NotificationSerializer
 
@@ -104,7 +65,6 @@ class NotificationListView(generics.ListAPIView):
 
 
 class NotificationDetailView(generics.RetrieveAPIView):
-    """GET /notifications/<pk>/"""
     permission_classes = [IsActiveUser]
     serializer_class   = NotificationSerializer
 
@@ -119,7 +79,6 @@ class NotificationDetailView(generics.RetrieveAPIView):
 
 
 class MarkReadView(APIView):
-    """POST /notifications/<pk>/read/"""
     permission_classes = [IsActiveUser]
 
     def post(self, request, pk: str, *args, **kwargs) -> Response:
@@ -136,15 +95,10 @@ class MarkReadView(APIView):
 
 
 class MarkAllReadView(APIView):
-    """
-    POST /notifications/read-all/
-    Marks ALL unread notifications for the current user as read.
-    Uses bulk .update() for efficiency.
-    """
     permission_classes = [IsActiveUser]
 
     def post(self, request, *args, **kwargs) -> Response:
-        from django.utils import timezone  # noqa: PLC0415
+        from django.utils import timezone
         updated = Notification.objects.filter(
             user=request.user,
             read_at__isnull=True,
@@ -157,11 +111,6 @@ class MarkAllReadView(APIView):
 
 
 class DeleteNotificationView(APIView):
-    """
-    DELETE /notifications/<pk>/
-    Removes a single notification for the current user.
-    Note: audit-trail notifications (security events) cannot be deleted.
-    """
     permission_classes = [IsActiveUser]
 
     UNDELETABLE_CATEGORIES = {
@@ -187,11 +136,6 @@ class DeleteNotificationView(APIView):
 
 
 class UnreadCountView(APIView):
-    """
-    GET /notifications/unread-count/
-    Returns the number of unread notifications + per-priority breakdown.
-    Lightweight endpoint polled by the frontend bell icon.
-    """
     permission_classes = [IsActiveUser]
 
     def get(self, request, *args, **kwargs) -> Response:
@@ -208,16 +152,7 @@ class UnreadCountView(APIView):
         })
 
 
-# ---------------------------------------------------------------------------
-# Preference views
-# ---------------------------------------------------------------------------
-
 class PreferenceListView(generics.ListAPIView):
-    """
-    GET /notifications/preferences/
-    Returns all category preferences for the current user.
-    Categories with no explicit preference show the system default.
-    """
     permission_classes = [IsActiveUser]
     serializer_class   = NotificationPreferenceSerializer
 
@@ -225,12 +160,7 @@ class PreferenceListView(generics.ListAPIView):
         return NotificationPreference.objects.filter(user=self.request.user)
 
     def list(self, request, *args, **kwargs):
-        """
-        Override to merge user prefs with defaults for categories that
-        have no explicit preference row — so the frontend always sees a
-        full list of all categories.
-        """
-        from .models import CATEGORY_DEFAULTS  # noqa: PLC0415
+        from .models import CATEGORY_DEFAULTS
 
         existing = {
             p.category: p
@@ -268,17 +198,9 @@ class PreferenceListView(generics.ListAPIView):
 
 
 class PreferenceUpdateView(APIView):
-    """
-    PATCH /notifications/preferences/<category>/
-    Body: {"email": true, "push": false, "in_app": true}
-
-    Creates or updates the preference row.
-    Enforces mandatory email for security categories.
-    """
     permission_classes = [IsActiveUser]
 
     def patch(self, request, category: str, *args, **kwargs) -> Response:
-        # Validate category
         valid_cats = {c for c, _ in NotificationCategory.choices}
         if category not in valid_cats:
             raise NotFound(_(f"Category '{category}' not found."))
@@ -287,7 +209,6 @@ class PreferenceUpdateView(APIView):
         push   = request.data.get("push")
         in_app = request.data.get("in_app")
 
-        # Build new channel bitmask
         pref, _ = NotificationPreference.objects.get_or_create(
             user=request.user,
             category=category,
@@ -299,7 +220,6 @@ class PreferenceUpdateView(APIView):
             if email:
                 channels = channels | int(Channel.EMAIL)
             else:
-                # Cannot disable mandatory email categories
                 if category in MANDATORY_EMAIL_CATEGORIES:
                     raise PermissionDenied(
                         _("Email notifications for security events cannot be disabled.")
@@ -331,12 +251,7 @@ class PreferenceUpdateView(APIView):
         })
 
 
-# ---------------------------------------------------------------------------
-# Push token views
-# ---------------------------------------------------------------------------
-
 class PushTokenListView(generics.ListAPIView):
-    """GET /notifications/push-tokens/ — list current user's registered devices."""
     permission_classes = [IsActiveUser]
     serializer_class   = PushTokenSerializer
 
@@ -345,12 +260,6 @@ class PushTokenListView(generics.ListAPIView):
 
 
 class PushTokenCreateView(generics.CreateAPIView):
-    """
-    POST /notifications/push-tokens/
-    Register a new device push token.
-    If the token already exists (same device, app reinstalled) it is
-    reactivated and its device_name updated.
-    """
     permission_classes = [IsActiveUser]
     serializer_class   = PushTokenWriteSerializer
     throttle_classes   = [PushTokenThrottle]
@@ -366,11 +275,7 @@ class PushTokenCreateView(generics.CreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Upsert — deactivate any existing token with this value for other users
-        # (device was transferred), then create/update for current user
-        PushToken.objects.filter(
-            token=token_str
-        ).exclude(user=request.user).update(is_active=False)
+        PushToken.objects.filter(token=token_str).exclude(user=request.user).update(is_active=False)
 
         push_token, created = PushToken.objects.update_or_create(
             user=request.user,
@@ -388,10 +293,6 @@ class PushTokenCreateView(generics.CreateAPIView):
 
 
 class PushTokenUpdateView(generics.UpdateAPIView):
-    """
-    PATCH /notifications/push-tokens/<pk>/
-    Update device name or refresh token string (token rotation on app relaunch).
-    """
     permission_classes = [IsActiveUser]
     serializer_class   = PushTokenWriteSerializer
     http_method_names  = ["patch", "head", "options"]
@@ -404,10 +305,6 @@ class PushTokenUpdateView(generics.UpdateAPIView):
 
 
 class PushTokenDeleteView(APIView):
-    """
-    DELETE /notifications/push-tokens/<pk>/
-    Deactivate a device push token (logout / unregister device).
-    """
     permission_classes = [IsActiveUser]
 
     def delete(self, request, pk: str, *args, **kwargs) -> Response:

@@ -18,8 +18,22 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/api": {
-        target: process.env.VITE_API_URL || "http://backend:8000",
+        target: process.env.VITE_API_URL || "http://localhost:8000",
         changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+    manifest: true,           // Helpful for Django
+    rollupOptions: {
+      output: {
+        // Organize assets nicely
+        assetFileNames: "assets/[name]-[hash][extname]",
+        chunkFileNames: "assets/[name]-[hash].js",
+        entryFileNames: "assets/[name]-[hash].js",
       },
     },
   },

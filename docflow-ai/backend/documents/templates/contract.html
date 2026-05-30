@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Contract {{ doc.number }}</title>
+<style>
+/* ── Page Setup ──────────────────────────────────────────────────────── */
+@page {
+  size: A4;
+  margin: 0;
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages) " · " "{{ doc.number }}";
+    font-size: 7.5pt; color: #9CA3AF;
+    font-family: var(--font-body);
+    padding-bottom: 8px;
+  }
+  @bottom-left {
+    content: "CONFIDENTIAL";
+    font-size: 7pt; color: #9CA3AF;
+    font-family: var(--font-body);
+    letter-spacing: 1px;
+    padding-bottom: 8px;
+  }
+}
+:root {
+  --primary:       #374151;   /* slate — formal/legal tone */
+  --primary-dark:  #1F2937;
+  --primary-light: #F9FAFB;
+  --accent:        #6366F1;   /* indigo for AI / contract accents */
+  --text:          #111827;
+  --muted:         #6B7280;
+  --border:        #D1D5DB;
+  --row-alt:       #F3F4F6;
+  --success:       #16A34A;
+  --warning:       #D97706;
+  --danger:        #DC2626;
+  --font-body:     'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-size:     9pt;
+  --font-legal:    'Times New Roman', Georgia, serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size);
+  color: var(--text);
+  line-height: 1.6;
+  background: #fff;
+}
+.page { padding: 0; min-height: 297mm; display: flex; flex-direction: column; }
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.header {
+  background: var(--primary-dark);
+  padding: 24px 36px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.header .logo img   { max-height: 48px; max-width: 150px; object-fit: contain; }
+.header .logo .company-name { font-size: 16pt; font-weight: 700; color: #fff; }
+.header .doc-type { text-align: right; }
+.header .doc-type h1 { font-size: 22pt; font-weight: 800; color: #fff; letter-spacing: 0.5px; line-height: 1; }
+.header .doc-type .doc-sub {
+  font-size: 9pt; color: rgba(255,255,255,0.65); margin-top: 4px; letter-spacing: 0.3px;
+}
+.header .doc-type .doc-number { font-size: 10pt; color: rgba(255,255,255,0.8); margin-top: 2px; }
+
+/* ── Status Bar ──────────────────────────────────────────────────────── */
+.status-bar {
+  background: var(--primary-light);
+  border-bottom: 2px solid var(--border);
+  padding: 7px 36px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.status-pill {
+  font-size: 7.5pt; font-weight: 700; letter-spacing: 0.5px;
+  padding: 3px 10px; border-radius: 9999px; text-transform: uppercase;
+}
+.status-draft    { background:#F3F4F6; color:#374151; }
+.status-sent     { background:#DBEAFE; color:#1D4ED8; }
+.status-pending  { background:#FEF3C7; color:#92400E; }
+.status-signed   { background:#D1FAE5; color:#065F46; }
+.status-active   { background:#DCFCE7; color:#15803D; }
+.status-completed{ background:#E0F2FE; color:#0369A1; }
+.status-cancelled{ background:#F3F4F6; color:#9CA3AF; }
+.status-expired  { background:#FEE2E2; color:#991B1B; }
+.meta-pill { font-size: 7.5pt; color: var(--muted); }
+.meta-pill strong { color: var(--text); }
+.expiry-warning { margin-left: auto; font-size: 8pt; font-weight: 700; color: var(--warning); }
+.expiry-danger  { margin-left: auto; font-size: 8pt; font-weight: 700; color: var(--danger); }
+
+/* ── Body ────────────────────────────────────────────────────────────── */
+.body { padding: 28px 36px; flex: 1; }
+
+/* ── Parties Block ───────────────────────────────────────────────────── */
+.parties {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.party { flex: 1; padding: 14px 16px; }
+.party:first-child { border-right: 1px solid var(--border); }
+.party-label {
+  font-size: 7pt; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: #fff;
+  background: var(--primary-dark);
+  margin: -14px -16px 10px;
+  padding: 5px 16px;
+}
+.party-name { font-size: 11pt; font-weight: 700; margin-bottom: 4px; }
+.party p { color: var(--muted); font-size: 8.5pt; line-height: 1.6; }
+.party .role-tag {
+  font-size: 7.5pt; background: var(--row-alt);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 1px 6px; display: inline-block; margin-top: 6px; color: var(--muted);
+}
+
+/* ── Contract Meta ───────────────────────────────────────────────────── */
+.meta-grid {
+  display: flex; border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; margin-bottom: 24px;
+}
+.meta-item { flex: 1; padding: 10px 14px; border-right: 1px solid var(--border); }
+.meta-item:last-child { border-right: none; }
+.meta-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 3px; }
+.meta-value { font-size: 9.5pt; font-weight: 600; color: var(--text); }
+.meta-value.expiring { color: var(--warning); }
+.meta-value.expired  { color: var(--danger); }
+
+/* ── Subject ─────────────────────────────────────────────────────────── */
+.subject-line {
+  background: var(--row-alt); border-left: 3px solid var(--accent);
+  padding: 8px 12px; border-radius: 0 4px 4px 0;
+  font-size: 10pt; font-weight: 600; margin-bottom: 24px;
+}
+
+/* ── Section Title ───────────────────────────────────────────────────── */
+.section-heading {
+  font-size: 9pt; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--primary-dark);
+  margin-bottom: 10px; padding-bottom: 5px;
+  border-bottom: 2px solid var(--primary-dark);
+  page-break-after: avoid;
+}
+
+/* ── Contract Body ───────────────────────────────────────────────────── */
+.contract-body {
+  font-family: var(--font-legal);
+  font-size: 9.5pt;
+  line-height: 1.75;
+  color: var(--text);
+  margin-bottom: 28px;
+  text-align: justify;
+  orphans: 3;
+  widows: 3;
+}
+.contract-body p {
+  margin-bottom: 10px;
+}
+
+/* ── Value Block ─────────────────────────────────────────────────────── */
+.value-block {
+  border: 1px solid var(--border); border-radius: 6px;
+  overflow: hidden; margin-bottom: 24px; width: 280px;
+}
+.value-row { display: flex; justify-content: space-between; padding: 6px 12px; font-size: 8.5pt; border-bottom: 1px solid var(--border); }
+.value-row:last-child { border-bottom: none; }
+.value-row .lbl { color: var(--muted); }
+.value-row .val { font-family: 'Courier New', monospace; font-weight: 600; }
+.value-row.grand { background: var(--primary-dark); }
+.value-row.grand .lbl, .value-row.grand .val { color: #fff; font-weight: 700; }
+
+/* ── AI Review ───────────────────────────────────────────────────────── */
+.ai-section { margin-bottom: 28px; }
+.ai-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #F3E8FF; color: #6D28D9;
+  border: 1px solid #DDD6FE;
+  padding: 3px 10px; border-radius: 9999px;
+  font-size: 7.5pt; font-weight: 700; margin-bottom: 10px;
+}
+.ai-item {
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 12px; margin-bottom: 8px; font-size: 8.5pt;
+}
+.ai-item .ai-severity {
+  font-size: 7pt; font-weight: 700; padding: 1px 6px;
+  border-radius: 3px; text-transform: uppercase; margin-right: 6px;
+}
+.ai-risk     { background:#FEE2E2; color:#991B1B; }
+.ai-warning  { background:#FEF3C7; color:#92400E; }
+.ai-compliant{ background:#D1FAE5; color:#065F46; }
+.ai-note     { background:#F3F4F6; color:#374151; }
+.ai-item p   { color: var(--muted); margin-top: 4px; font-size: 8pt; }
+
+/* ── Notes ───────────────────────────────────────────────────────────── */
+.notes-section { display: flex; gap: 20px; margin-bottom: 24px; }
+.notes-block { flex: 1; }
+.notes-label { font-size: 7.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 5px; }
+.notes-content { font-size: 8pt; line-height: 1.6; white-space: pre-wrap; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; background: var(--row-alt); }
+
+/* ── Signature Section ───────────────────────────────────────────────── */
+.signature-section {
+  border: 1.5px solid var(--border); border-radius: 8px;
+  overflow: hidden; margin-bottom: 24px;
+  page-break-inside: avoid;
+}
+.sig-header {
+  background: var(--primary-dark); color: #fff;
+  padding: 8px 16px; font-size: 8pt; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.sig-body { display: flex; }
+.sig-party { flex: 1; padding: 16px 18px; }
+.sig-party:first-child { border-right: 1px solid var(--border); }
+.sig-party-name { font-size: 9pt; font-weight: 700; margin-bottom: 12px; }
+.sig-line-label { font-size: 7.5pt; color: var(--muted); margin-bottom: 18px; }
+.sig-line {
+  border-bottom: 1px solid var(--text);
+  padding-bottom: 2px; min-height: 28px; margin-bottom: 6px;
+}
+.sig-line.signed {
+  border-bottom-color: var(--success);
+  font-size: 9pt; font-style: italic; color: var(--text); padding-top: 6px;
+}
+.sig-meta { font-size: 7.5pt; color: var(--muted); margin-top: 4px; }
+.sig-image img { max-height: 40px; max-width: 120px; object-fit: contain; }
+
+/* ── Signed Stamp ────────────────────────────────────────────────────── */
+.signed-stamp {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #F0FDF4; border: 2px solid var(--success);
+  color: var(--success); padding: 6px 14px;
+  border-radius: 6px; font-weight: 700; font-size: 10pt;
+  margin-top: 8px;
+}
+
+/* ── Auto-renew Notice ───────────────────────────────────────────────── */
+.renew-notice {
+  border: 1px solid #FDE68A; background: #FFFBEB;
+  border-radius: 6px; padding: 10px 14px;
+  font-size: 8pt; color: #92400E; margin-bottom: 20px;
+}
+.renew-notice strong { display: block; margin-bottom: 3px; font-size: 8.5pt; }
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+.footer {
+  margin-top: auto; border-top: 1px solid var(--border);
+  padding: 12px 36px; display: flex; justify-content: space-between; align-items: center;
+}
+.footer-left { font-size: 7.5pt; color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      {% if logo_url %}<img src="{{ logo_url }}" alt="{{ company.name }}">
+      {% else %}<div class="company-name">{{ company.name }}</div>{% endif %}
+    </div>
+    <div class="doc-type">
+      <h1>CONTRACT</h1>
+      <div class="doc-sub">SERVICE AGREEMENT</div>
+      <div class="doc-number">Ref: {{ doc.number }}</div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <span class="status-pill status-{{ doc.status }}">{{ doc.get_status_display }}</span>
+    <span class="meta-pill"><strong>Issued:</strong> {{ doc.issue_date }}</span>
+    {% if doc.start_date %}
+    <span class="meta-pill"><strong>Effective:</strong> {{ doc.start_date }}</span>
+    {% endif %}
+    {% if doc.end_date %}
+    <span class="meta-pill"><strong>Expires:</strong> {{ doc.end_date }}</span>
+    {% endif %}
+    {% if doc.currency %}
+    <span class="meta-pill"><strong>Value Currency:</strong> {{ doc.currency }}</span>
+    {% endif %}
+    {% if doc.is_expiring_soon and not doc.is_expired %}
+    <span class="expiry-warning">⚠ Expiring in {{ doc.days_until_expiry }} days</span>
+    {% elif doc.is_expired %}
+    <span class="expiry-danger">✗ Expired</span>
+    {% endif %}
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- Parties -->
+    <div class="parties">
+      <div class="party">
+        <div class="party-label">The Company ("Service Provider")</div>
+        <div class="party-name">{{ company.name }}</div>
+        {% if company.email %}<p>{{ company.email }}</p>{% endif %}
+        {% if company.phone %}<p>{{ company.phone }}</p>{% endif %}
+        {% if company.full_address %}<p>{{ company.full_address }}</p>{% endif %}
+        {% if vat and vat.vat_number %}
+        <span class="role-tag">VAT Reg: {{ vat.vat_number }}</span>
+        {% endif %}
+      </div>
+      <div class="party">
+        <div class="party-label">The Client ("Counterparty")</div>
+        <div class="party-name">{{ doc.client_formal_name }}</div>
+        {% if doc.client_email %}<p>{{ doc.client_email }}</p>{% endif %}
+        {% if doc.client_phone %}<p>{{ doc.client_phone }}</p>{% endif %}
+        {% if doc.client_address %}<p>{{ doc.client_address }}</p>{% endif %}
+        {% if doc.client_vat_number %}
+        <span class="role-tag">VAT: {{ doc.client_vat_number }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Meta grid -->
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="meta-label">Contract No.</div>
+        <div class="meta-value">{{ doc.number }}</div>
+      </div>
+      {% if doc.start_date %}
+      <div class="meta-item">
+        <div class="meta-label">Effective Date</div>
+        <div class="meta-value">{{ doc.start_date }}</div>
+      </div>
+      {% endif %}
+      {% if doc.end_date %}
+      <div class="meta-item">
+        <div class="meta-label">Expiry Date</div>
+        <div class="meta-value {% if doc.is_expired %}expired{% elif doc.is_expiring_soon %}expiring{% endif %}">
+          {{ doc.end_date }}
+        </div>
+      </div>
+      {% endif %}
+      <div class="meta-item">
+        <div class="meta-label">Auto-Renew</div>
+        <div class="meta-value">{% if doc.auto_renew %}Yes ({{ doc.renewal_notice_days }} day notice){% else %}No{% endif %}</div>
+      </div>
+    </div>
+
+    <!-- Subject -->
+    {% if doc.subject %}
+    <div class="subject-line">Re: {{ doc.subject }}</div>
+    {% endif %}
+
+    <!-- Contract Value -->
+    {% if doc.total %}
+    <div class="section-heading">Contract Value</div>
+    <div class="value-block">
+      {% if doc.subtotal %}
+      <div class="value-row">
+        <span class="lbl">Subtotal</span>
+        <span class="val">{{ doc.currency }} {{ doc.subtotal|floatformat:2 }}</span>
+      </div>
+      {% endif %}
+      {% if doc.tax_amount %}
+      <div class="value-row">
+        <span class="lbl">{% if vat %}{{ vat.vat_label|default:"VAT" }} ({{ vat.vat_rate }}%){% else %}Tax{% endif %}</span>
+        <span class="val">{{ doc.currency }} {{ doc.tax_amount|floatformat:2 }}</span>
+      </div>
+      {% endif %}
+      <div class="value-row grand">
+        <span class="lbl">TOTAL CONTRACT VALUE</span>
+        <span class="val">{{ doc.currency }} {{ doc.total|floatformat:2 }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Contract Body -->
+    {% if doc.body %}
+    <div class="section-heading">Terms &amp; Conditions</div>
+    <div class="contract-body">
+      {% for paragraph in doc.body.splitlines %}
+        {% if paragraph.strip %}
+          <p>{{ paragraph }}</p>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- AI Review Results -->
+    {% if doc.ai_review %}
+    <div class="ai-section">
+      <div class="section-heading">AI Contract Analysis</div>
+      <div class="ai-badge">⚡ AI Analysis — Powered by Claude</div>
+      {% if doc.ai_reviewed_at %}
+      <p style="font-size:7.5pt;color:var(--muted);margin-bottom:10px">Reviewed: {{ doc.ai_reviewed_at }}</p>
+      {% endif %}
+      {% for item in doc.ai_review %}
+      <div class="ai-item">
+        <span class="ai-severity
+          {% if item.severity == 'high' or item.type == 'risk' %}ai-risk
+          {% elif item.severity == 'medium' or item.type == 'warning' %}ai-warning
+          {% elif item.type == 'compliant' %}ai-compliant
+          {% else %}ai-note{% endif %}">
+          {{ item.severity|default:item.type|upper }}
+        </span>
+        <strong>{{ item.risk|default:item.title|default:item.message }}</strong>
+        {% if item.suggestion %}
+        <p>{{ item.suggestion }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Notes & Terms -->
+    {% if doc.notes or doc.terms %}
+    <div class="notes-section">
+      {% if doc.notes %}
+      <div class="notes-block">
+        <div class="notes-label">Additional Notes</div>
+        <div class="notes-content">{{ doc.notes }}</div>
+      </div>
+      {% endif %}
+      {% if doc.terms %}
+      <div class="notes-block">
+        <div class="notes-label">Payment &amp; Delivery Terms</div>
+        <div class="notes-content">{{ doc.terms }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Auto-renew notice -->
+    {% if doc.auto_renew and doc.end_date and not doc.is_expired %}
+    <div class="renew-notice">
+      <strong>⚠ Auto-Renewal Notice</strong>
+      This contract will automatically renew on <strong>{{ doc.end_date }}</strong>
+      unless either party provides {{ doc.renewal_notice_days }} days' written notice of termination.
+    </div>
+    {% endif %}
+
+    <!-- Signature Section -->
+    <div class="signature-section">
+      <div class="sig-header">Execution &amp; Authorisation</div>
+      <div class="sig-body">
+
+        <!-- Service Provider -->
+        <div class="sig-party">
+          <div class="sig-party-name">{{ company.name }}</div>
+          <div class="sig-line-label">Authorised Signatory</div>
+          {% if sig_url %}
+          <div class="sig-image" style="margin-bottom:6px"><img src="{{ sig_url }}" alt="Signature"></div>
+          <div class="sig-meta">Authorised Signature</div>
+          {% else %}
+          <div class="sig-line">&nbsp;</div>
+          <div class="sig-meta">Signature</div>
+          {% endif %}
+          <div style="margin-top:14px">
+            <div class="sig-line">&nbsp;</div>
+            <div class="sig-meta">Full Name &amp; Title</div>
+          </div>
+          <div style="margin-top:14px">
+            <div class="sig-line">&nbsp;</div>
+            <div class="sig-meta">Date</div>
+          </div>
+          {% if stamp_url %}
+          <div style="margin-top:12px;opacity:0.8">
+            <img src="{{ stamp_url }}" style="width:60px;height:60px;object-fit:contain" alt="Stamp">
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Client -->
+        <div class="sig-party">
+          <div class="sig-party-name">{{ doc.client_formal_name }}</div>
+          <div class="sig-line-label">Authorised Signatory</div>
+
+          {% if doc.status == 'signed' and doc.signed_by_name %}
+            <div class="sig-line signed">{{ doc.signed_by_name }}</div>
+            <div class="sig-meta">✓ Signed electronically</div>
+            {% if doc.signed_at %}
+            <div class="sig-meta" style="margin-top:4px">Date: {{ doc.signed_at }}</div>
+            {% endif %}
+            {% if doc.signature_ip %}
+            <div class="sig-meta" style="margin-top:2px">IP: {{ doc.signature_ip }}</div>
+            {% endif %}
+            <div class="signed-stamp">✓ SIGNED</div>
+          {% else %}
+            <div class="sig-line">&nbsp;</div>
+            <div class="sig-meta">Signature</div>
+            <div style="margin-top:14px">
+              <div class="sig-line">&nbsp;</div>
+              <div class="sig-meta">Full Name &amp; Title</div>
+            </div>
+            <div style="margin-top:14px">
+              <div class="sig-line">&nbsp;</div>
+              <div class="sig-meta">Date</div>
+            </div>
+          {% endif %}
+        </div>
+
+      </div><!-- /sig-body -->
+    </div><!-- /signature-section -->
+
+  </div><!-- /body -->
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      <strong>{{ company.name }}</strong> · {{ doc.number }}<br>
+      {% if company.email %}{{ company.email }}{% endif %}
+      {% if company.phone %} · {{ company.phone }}{% endif %}
+      {% if branding and branding.contract_footer_text %}<br>{{ branding.contract_footer_text }}{% endif %}
+    </div>
+    <div style="font-size:7pt;color:var(--muted);text-align:right">
+      This document was generated by DocFlow AI.<br>
+      Any amendments must be made in writing and signed by both parties.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
