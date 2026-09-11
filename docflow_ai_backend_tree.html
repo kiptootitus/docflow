@@ -1,0 +1,170 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-mono,monospace);font-size:12px;color:var(--color-text-primary)}
+.tree-root{padding:16px 0}
+.section-label{font-family:var(--font-sans);font-size:13px;font-weight:500;color:var(--color-text-secondary);padding:8px 0 4px;letter-spacing:.04em;text-transform:uppercase}
+.node{display:flex;align-items:flex-start;padding:1.5px 0;cursor:pointer;border-radius:4px;transition:background .12s}
+.node:hover{background:var(--color-background-secondary)}
+.indent{display:flex;align-items:stretch;flex-shrink:0}
+.vline{width:16px;border-left:1px solid var(--color-border-tertiary);margin-left:7px}
+.connector{width:16px;position:relative}
+.connector::before{content:'';position:absolute;left:7px;top:0;bottom:50%;border-left:1px solid var(--color-border-tertiary)}
+.connector::after{content:'';position:absolute;left:7px;top:50%;width:9px;border-top:1px solid var(--color-border-tertiary)}
+.icon{width:18px;flex-shrink:0;font-size:13px;line-height:1.6}
+.name{color:var(--color-text-primary);font-weight:400;line-height:1.6}
+.name.dir{color:#185FA5}
+.name.dir::after{content:'/';opacity:.45}
+.name.pyfile{color:#3B6D11}
+.name.mdfile{color:#854F0B}
+.name.envfile{color:#993C1D}
+.name.cfg{color:#534AB7}
+.badge{margin-left:6px;font-size:10px;padding:1px 5px;border-radius:3px;font-family:var(--font-sans);font-weight:500;line-height:1.5;flex-shrink:0}
+.badge.new{background:#E1F5EE;color:#0F6E56}
+.badge.core{background:#EEEDFE;color:#3C3489}
+.badge.ai{background:#FAECE7;color:#712B13}
+.badge.pay{background:#FBEAF0;color:#72243E}
+.badge.infra{background:#E6F1FB;color:#0C447C}
+.comment{color:var(--color-text-tertiary);font-size:11px;margin-left:6px;font-family:var(--font-sans)}
+</style>
+<div class="tree-root">
+<div class="section-label">🐍 Backend — Django 5 + DRF</div>
+<div style="padding:4px 0 12px">
+
+<!-- Root -->
+<div class="node"><span class="icon">📁</span><span class="name dir" style="font-weight:500">docflow-ai/backend</span></div>
+
+<!-- manage.py -->
+<div class="node"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">manage.py</span></div>
+<!-- requirements -->
+<div class="node"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name cfg">requirements.txt</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name cfg">requirements-dev.txt</span></div>
+<!-- Dockerfile -->
+<div class="node"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">🐳</span><span class="name cfg">Dockerfile</span><span class="badge infra">infra</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">🐳</span><span class="name cfg">docker-compose.yml</span><span class="badge infra">infra</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">🔒</span><span class="name envfile">.env.example</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name mdfile">pytest.ini</span></div>
+
+<!-- config/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">config</span><span class="comment">project settings split</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">__init__.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">settings/</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">base.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">local.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">production.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">wsgi.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">asgi.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">celery.py</span></div>
+
+<!-- users/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">users</span><span class="badge core">core</span><span class="comment">custom auth + roles</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">models.py</span><span class="comment">AbstractBaseUser, Role enum</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">serializers.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">views.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">permissions.py</span><span class="comment">IsOwner, IsMember, IsClient</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">signals.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">admin.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">tests.py</span></div>
+
+<!-- companies/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">companies</span><span class="badge core">core</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">models.py</span><span class="comment">Company, Branding, VAT</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">serializers.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">views.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">admin.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">tests.py</span></div>
+
+<!-- documents/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">documents</span><span class="badge core">core</span><span class="comment">invoices, quotes, contracts</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">models.py</span><span class="comment">Invoice, Quotation, Contract, LineItem</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">serializers.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">views.py</span><span class="comment">ModelViewSet + permissions</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">filters.py</span><span class="comment">django-filter for status, date</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">pdf_generator.py</span><span class="comment">WeasyPrint HTML→PDF</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">docx_generator.py</span><span class="comment">python-docx export</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">tasks.py</span><span class="comment">Celery: generate_pdf, send_email</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">admin.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">tests.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">templates/documents</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name mdfile">invoice.html</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name mdfile">quotation.html</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name mdfile">contract.html</span></div>
+
+<!-- billing/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">billing</span><span class="badge pay">payments</span><span class="comment">— you are here (views.py)</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">models.py</span><span class="comment">Subscription, Plan, CreditLedger</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">serializers.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">views.py</span><span class="comment">CreateCheckoutSession, Webhook</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">webhooks.py</span><span class="comment">Stripe event handlers</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">tasks.py</span><span class="comment">payment reminders, invoice auto-send</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">admin.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">tests.py</span></div>
+
+<!-- ai/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">ai</span><span class="badge ai">AI</span><span class="comment">Claude + LangChain</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">models.py</span><span class="comment">AiReview, AiGeneration, CreditUsage</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">provider.py</span><span class="comment">AIProvider interface (Claude/GPT-4 swap)</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">views.py</span><span class="comment">SSE streaming endpoints</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">contract_review.py</span><span class="comment">pdfplumber + LangChain chunking</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">doc_generator.py</span><span class="comment">NDA / Service Agreement prompts</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">compliance.py</span><span class="comment">jurisdiction rule engine</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">tasks.py</span><span class="comment">nightly compliance scan</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">prompts</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name mdfile">review_contract.j2</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name mdfile">generate_nda.j2</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name mdfile">generate_agreement.j2</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">tests.py</span></div>
+
+<!-- integrations/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">integrations</span><span class="badge new">new ✦</span><span class="comment">QuickBooks, Xero, Slack, Drive</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">quickbooks.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">xero.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">slack_notifier.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">google_drive.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">zapier_webhooks.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">base.py</span><span class="comment">IntegrationBase ABC</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">views.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+
+<!-- analytics/ — new -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">analytics</span><span class="badge new">new ✦</span><span class="comment">MRR, churn, revenue metrics API</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">models.py</span><span class="comment">RevenueSnapshot, EventLog</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">views.py</span><span class="comment">MRR, ARR, churn rate endpoints</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">aggregators.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+
+<!-- notifications/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">notifications</span><span class="badge new">new ✦</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">models.py</span><span class="comment">Notification, NotificationPreference</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">email.py</span><span class="comment">Anymail + SendGrid templates</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">push.py</span><span class="comment">Expo Push + FCM/APNS dispatcher</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">tasks.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">views.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+
+<!-- signatures/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">signatures</span><span class="badge pay">payments</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">models.py</span><span class="comment">SignatureRequest, SignatureAudit</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">dropbox_sign.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">views.py</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">urls.py</span></div>
+
+<!-- storage/ -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">storage</span><span class="badge infra">infra</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">backends.py</span><span class="comment">S3 + local dev backend</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">🐍</span><span class="name pyfile">utils.py</span><span class="comment">presigned URL helper</span></div>
+
+<!-- celerybeat-schedule + nginx -->
+<div class="node" style="margin-top:6px"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name cfg">celerybeat-schedule</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="connector"></div></div><span class="icon">📁</span><span class="name dir">nginx</span><span class="badge infra">infra</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name cfg">nginx.conf</span></div>
+<div class="node"><div class="indent"><div class="vline"></div><div class="vline"></div><div class="connector"></div></div><span class="icon">📄</span><span class="name cfg">ssl.conf</span></div>
+
+</div>
+</div>

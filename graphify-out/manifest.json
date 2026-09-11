@@ -1,0 +1,1017 @@
+{
+  "docflow-ai/backend/ai/__init__.py": {
+    "mtime": 1779002878.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/ai/admin.py": {
+    "mtime": 1780082936.165355,
+    "ast_hash": "379eaa38798428f3e1882ee0a6fd74a2",
+    "semantic_hash": "379eaa38798428f3e1882ee0a6fd74a2"
+  },
+  "docflow-ai/backend/ai/apps.py": {
+    "mtime": 1780091751.8634408,
+    "ast_hash": "518ba4cb2574e73c9c4b6605ead68367",
+    "semantic_hash": "518ba4cb2574e73c9c4b6605ead68367"
+  },
+  "docflow-ai/backend/ai/compliance.py": {
+    "mtime": 1780084259.7316234,
+    "ast_hash": "a96c3af38bbd308549c58fb66c48aeaa",
+    "semantic_hash": "a96c3af38bbd308549c58fb66c48aeaa"
+  },
+  "docflow-ai/backend/ai/contract_review.py": {
+    "mtime": 1780084235.279959,
+    "ast_hash": "8154438a9cc996612c389f429d69bb48",
+    "semantic_hash": "8154438a9cc996612c389f429d69bb48"
+  },
+  "docflow-ai/backend/ai/doc_generator.py": {
+    "mtime": 1780084248.8999338,
+    "ast_hash": "72b3cdfb1223610d40a7542f55283fe3",
+    "semantic_hash": "72b3cdfb1223610d40a7542f55283fe3"
+  },
+  "docflow-ai/backend/ai/middleware.py": {
+    "mtime": 1780079273.1319227,
+    "ast_hash": "6996437f27f1d85909b66fb34fe83105",
+    "semantic_hash": "6996437f27f1d85909b66fb34fe83105"
+  },
+  "docflow-ai/backend/ai/migrations/0001_initial.py": {
+    "mtime": 1780083422.6556005,
+    "ast_hash": "b41d9789b2540ffe3fb221e12ad73ea2",
+    "semantic_hash": "b41d9789b2540ffe3fb221e12ad73ea2"
+  },
+  "docflow-ai/backend/ai/migrations/0002_creditusage.py": {
+    "mtime": 1780084882.2983706,
+    "ast_hash": "8d2c3919ea255c37b36c2a2b35fccbdc",
+    "semantic_hash": "8d2c3919ea255c37b36c2a2b35fccbdc"
+  },
+  "docflow-ai/backend/ai/migrations/__init__.py": {
+    "mtime": 1780082942.3032062,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/ai/models.py": {
+    "mtime": 1780092404.7811315,
+    "ast_hash": "c6edc742b8287f86538dd8944e1cab21",
+    "semantic_hash": "c6edc742b8287f86538dd8944e1cab21"
+  },
+  "docflow-ai/backend/ai/permissions.py": {
+    "mtime": 1780079294.6803286,
+    "ast_hash": "c3b1f96dca5e61e7480767dfa08a352b",
+    "semantic_hash": "c3b1f96dca5e61e7480767dfa08a352b"
+  },
+  "docflow-ai/backend/ai/prompts/prompt_blueprints.py": {
+    "mtime": 1780084476.7396429,
+    "ast_hash": "22829c23ec1cd1c6fb1b774e675eb2a4",
+    "semantic_hash": "22829c23ec1cd1c6fb1b774e675eb2a4"
+  },
+  "docflow-ai/backend/ai/provider.py": {
+    "mtime": 1780084182.8320658,
+    "ast_hash": "8b0af2a4b64f29d624aad1b954a3fd71",
+    "semantic_hash": "8b0af2a4b64f29d624aad1b954a3fd71"
+  },
+  "docflow-ai/backend/ai/serializers.py": {
+    "mtime": 1780082774.423315,
+    "ast_hash": "37e69876ed2ccaae4be01f4dee19be27",
+    "semantic_hash": "37e69876ed2ccaae4be01f4dee19be27"
+  },
+  "docflow-ai/backend/ai/services.py": {
+    "mtime": 1779618621.7791798,
+    "ast_hash": "6af58ca0c597a9d4f27c944464c37d87",
+    "semantic_hash": "6af58ca0c597a9d4f27c944464c37d87"
+  },
+  "docflow-ai/backend/ai/tasks.py": {
+    "mtime": 1780084271.6655974,
+    "ast_hash": "f2ff9def5a773c19dfe4bad3a1f08e22",
+    "semantic_hash": "f2ff9def5a773c19dfe4bad3a1f08e22"
+  },
+  "docflow-ai/backend/ai/tests/factories.py": {
+    "mtime": 1780083982.1140525,
+    "ast_hash": "b84717b5335b6cdfa0516adb140495a1",
+    "semantic_hash": "b84717b5335b6cdfa0516adb140495a1"
+  },
+  "docflow-ai/backend/ai/tests/test_infrastructure.py": {
+    "mtime": 1780081974.686534,
+    "ast_hash": "a20be668c9d610e04b7a8bac4d6757e0",
+    "semantic_hash": "a20be668c9d610e04b7a8bac4d6757e0"
+  },
+  "docflow-ai/backend/ai/tests/test_permissions.py": {
+    "mtime": 1780081986.8242683,
+    "ast_hash": "9fb516958d46fc66e112b477c9e83e23",
+    "semantic_hash": "9fb516958d46fc66e112b477c9e83e23"
+  },
+  "docflow-ai/backend/ai/tests/test_risks.py": {
+    "mtime": 1780088576.0315034,
+    "ast_hash": "305baf357c3f08fc4a4e640ccfa5fbf1",
+    "semantic_hash": "305baf357c3f08fc4a4e640ccfa5fbf1"
+  },
+  "docflow-ai/backend/ai/tests/test_serializers.py": {
+    "mtime": 1780081996.4071949,
+    "ast_hash": "924f3e5766f44018fd83ad56fed15c7c",
+    "semantic_hash": "924f3e5766f44018fd83ad56fed15c7c"
+  },
+  "docflow-ai/backend/ai/tests/test_views.py": {
+    "mtime": 1780082005.9723535,
+    "ast_hash": "0ce4a9dd5f29c62a707c2d8607805b6d",
+    "semantic_hash": "0ce4a9dd5f29c62a707c2d8607805b6d"
+  },
+  "docflow-ai/backend/ai/urls.py": {
+    "mtime": 1780087692.2578754,
+    "ast_hash": "f620144993eb72648b6e02429ebaa449",
+    "semantic_hash": "f620144993eb72648b6e02429ebaa449"
+  },
+  "docflow-ai/backend/ai/views.py": {
+    "mtime": 1780086990.7593722,
+    "ast_hash": "e27a5a925721ad278b4ef7506cf2c859",
+    "semantic_hash": "e27a5a925721ad278b4ef7506cf2c859"
+  },
+  "docflow-ai/backend/analytics/__init__.py": {
+    "mtime": 1780099382.6727774,
+    "ast_hash": "e1734100b1a612811393935f7f1f2286",
+    "semantic_hash": "e1734100b1a612811393935f7f1f2286"
+  },
+  "docflow-ai/backend/analytics/admin.py": {
+    "mtime": 1780099028.3541584,
+    "ast_hash": "518ab3231c353e6939323b26b843433f",
+    "semantic_hash": "518ab3231c353e6939323b26b843433f"
+  },
+  "docflow-ai/backend/analytics/aggregators.py": {
+    "mtime": 1780098930.3166156,
+    "ast_hash": "8ea3b83b59d80515bc4e7bf7f46cd6e1",
+    "semantic_hash": "8ea3b83b59d80515bc4e7bf7f46cd6e1"
+  },
+  "docflow-ai/backend/analytics/apps.py": {
+    "mtime": 1780099189.2651753,
+    "ast_hash": "80a4c4056c0265e568abe26775b93373",
+    "semantic_hash": "80a4c4056c0265e568abe26775b93373"
+  },
+  "docflow-ai/backend/analytics/management/commands/generate_analytics_snapshots.py": {
+    "mtime": 1780099302.6719794,
+    "ast_hash": "1e3a5f4e66dc32b8e0e733a62ba07446",
+    "semantic_hash": "1e3a5f4e66dc32b8e0e733a62ba07446"
+  },
+  "docflow-ai/backend/analytics/migrations/0001_initial.py": {
+    "mtime": 1780104178.4394891,
+    "ast_hash": "ad87de1e6ce415927f425f4892fa8b00",
+    "semantic_hash": "ad87de1e6ce415927f425f4892fa8b00"
+  },
+  "docflow-ai/backend/analytics/migrations/__init__.py": {
+    "mtime": 1779902380.2010236,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/analytics/models.py": {
+    "mtime": 1780098824.8520393,
+    "ast_hash": "82d24c5d83bcee197cf31250390cdc69",
+    "semantic_hash": "82d24c5d83bcee197cf31250390cdc69"
+  },
+  "docflow-ai/backend/analytics/permissions.py": {
+    "mtime": 1780099008.786881,
+    "ast_hash": "12c24278b3f2c1b16cd883f8f03e2390",
+    "semantic_hash": "12c24278b3f2c1b16cd883f8f03e2390"
+  },
+  "docflow-ai/backend/analytics/serializers.py": {
+    "mtime": 1780098979.8251936,
+    "ast_hash": "44526c094c9f8894d136178162c33f4c",
+    "semantic_hash": "44526c094c9f8894d136178162c33f4c"
+  },
+  "docflow-ai/backend/analytics/signals.py": {
+    "mtime": 1780099208.5514724,
+    "ast_hash": "d13bc7354873be4383b8cd076af7d8d0",
+    "semantic_hash": "d13bc7354873be4383b8cd076af7d8d0"
+  },
+  "docflow-ai/backend/analytics/tasks.py": {
+    "mtime": 1780103998.6879244,
+    "ast_hash": "1a3c8d9427cc358bd7a200efc5e6fc84",
+    "semantic_hash": "1a3c8d9427cc358bd7a200efc5e6fc84"
+  },
+  "docflow-ai/backend/analytics/test_aggregators.py": {
+    "mtime": 1780099364.8825366,
+    "ast_hash": "c32635ab0625db6246dd796f0e83b834",
+    "semantic_hash": "c32635ab0625db6246dd796f0e83b834"
+  },
+  "docflow-ai/backend/analytics/test_models.py": {
+    "mtime": 1780099335.6094546,
+    "ast_hash": "c25b3a26cd8dd38c136e4b828f743d96",
+    "semantic_hash": "c25b3a26cd8dd38c136e4b828f743d96"
+  },
+  "docflow-ai/backend/analytics/tests.py": {
+    "mtime": 1779902380.200134,
+    "ast_hash": "465b7e9f69bfd158c850cdfbc7306818",
+    "semantic_hash": "465b7e9f69bfd158c850cdfbc7306818"
+  },
+  "docflow-ai/backend/analytics/views.py": {
+    "mtime": 1780098957.3682067,
+    "ast_hash": "fd47b86d6867e6d93f14325e761ac455",
+    "semantic_hash": "fd47b86d6867e6d93f14325e761ac455"
+  },
+  "docflow-ai/backend/billing/__init__.py": {
+    "mtime": 1779002878.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/billing/urls.py": {
+    "mtime": 1779003115.0,
+    "ast_hash": "ce4d79e64b8e279d58c96d77dad9b2ee",
+    "semantic_hash": "ce4d79e64b8e279d58c96d77dad9b2ee"
+  },
+  "docflow-ai/backend/billing/views.py": {
+    "mtime": 1779902629.8831196,
+    "ast_hash": "5fb0ae1e1808761bf7767fe6b8b26575",
+    "semantic_hash": "5fb0ae1e1808761bf7767fe6b8b26575"
+  },
+  "docflow-ai/backend/billings/__init__.py": {
+    "mtime": 1779902559.380983,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/billings/admin.py": {
+    "mtime": 1779902559.380983,
+    "ast_hash": "e3dc717de887db03a015667a5fec59d8",
+    "semantic_hash": "e3dc717de887db03a015667a5fec59d8"
+  },
+  "docflow-ai/backend/billings/apps.py": {
+    "mtime": 1779902559.3820646,
+    "ast_hash": "65fadba8ac96e583445ca3673ca842c5",
+    "semantic_hash": "65fadba8ac96e583445ca3673ca842c5"
+  },
+  "docflow-ai/backend/billings/migrations/__init__.py": {
+    "mtime": 1779902559.3820646,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/billings/models.py": {
+    "mtime": 1779902559.3806632,
+    "ast_hash": "8c4eb991c6dca757bdd77f539092e29b",
+    "semantic_hash": "8c4eb991c6dca757bdd77f539092e29b"
+  },
+  "docflow-ai/backend/billings/tests.py": {
+    "mtime": 1779902559.3811886,
+    "ast_hash": "465b7e9f69bfd158c850cdfbc7306818",
+    "semantic_hash": "465b7e9f69bfd158c850cdfbc7306818"
+  },
+  "docflow-ai/backend/billings/urls.py": {
+    "mtime": 1779902748.4141903,
+    "ast_hash": "ce4d79e64b8e279d58c96d77dad9b2ee",
+    "semantic_hash": "ce4d79e64b8e279d58c96d77dad9b2ee"
+  },
+  "docflow-ai/backend/billings/views.py": {
+    "mtime": 1779902748.3061893,
+    "ast_hash": "5fb0ae1e1808761bf7767fe6b8b26575",
+    "semantic_hash": "5fb0ae1e1808761bf7767fe6b8b26575"
+  },
+  "docflow-ai/backend/billings/webhooks.py": {
+    "mtime": 1779903055.660082,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/companies/__init__.py": {
+    "mtime": 1779908498.6653116,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/companies/admin.py": {
+    "mtime": 1779908608.391062,
+    "ast_hash": "af225fedd22bafea34bc6c2f65f5eb0e",
+    "semantic_hash": "af225fedd22bafea34bc6c2f65f5eb0e"
+  },
+  "docflow-ai/backend/companies/apps.py": {
+    "mtime": 1779908498.6667078,
+    "ast_hash": "a6265bc8344def07b3544d0a0cb6f77f",
+    "semantic_hash": "a6265bc8344def07b3544d0a0cb6f77f"
+  },
+  "docflow-ai/backend/companies/migrations/0001_initial.py": {
+    "mtime": 1779909081.9221795,
+    "ast_hash": "c5258074463330ddeb73a2d74c007ea3",
+    "semantic_hash": "c5258074463330ddeb73a2d74c007ea3"
+  },
+  "docflow-ai/backend/companies/migrations/__init__.py": {
+    "mtime": 1779908498.6667078,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/companies/models.py": {
+    "mtime": 1779908519.4140303,
+    "ast_hash": "2c8106a4a20a9be742c1e30400cf68e7",
+    "semantic_hash": "2c8106a4a20a9be742c1e30400cf68e7"
+  },
+  "docflow-ai/backend/companies/serializers.py": {
+    "mtime": 1779923832.586347,
+    "ast_hash": "9de9ec02af4a02931f9b300f17296ef3",
+    "semantic_hash": "9de9ec02af4a02931f9b300f17296ef3"
+  },
+  "docflow-ai/backend/companies/tests.py": {
+    "mtime": 1779908624.6267982,
+    "ast_hash": "f4483ca90fd023b02a6e97e30f889917",
+    "semantic_hash": "f4483ca90fd023b02a6e97e30f889917"
+  },
+  "docflow-ai/backend/companies/urls.py": {
+    "mtime": 1779908592.4358351,
+    "ast_hash": "1a416d0d2c46468665c96003d53eb1a3",
+    "semantic_hash": "1a416d0d2c46468665c96003d53eb1a3"
+  },
+  "docflow-ai/backend/companies/views.py": {
+    "mtime": 1779923802.789092,
+    "ast_hash": "f1628cdc666dad987aefa07430a5c576",
+    "semantic_hash": "f1628cdc666dad987aefa07430a5c576"
+  },
+  "docflow-ai/backend/docflow/__init__.py": {
+    "mtime": 1780095604.7751136,
+    "ast_hash": "bfba3524b8145988006591fd251681e6",
+    "semantic_hash": "bfba3524b8145988006591fd251681e6"
+  },
+  "docflow-ai/backend/docflow/asgi.py": {
+    "mtime": 1779086412.1326306,
+    "ast_hash": "a9265ad477949112c3615b44bf67971a",
+    "semantic_hash": "a9265ad477949112c3615b44bf67971a"
+  },
+  "docflow-ai/backend/docflow/celery.py": {
+    "mtime": 1780095709.6247973,
+    "ast_hash": "d77939180b66d1de0edbb2bea80d9475",
+    "semantic_hash": "d77939180b66d1de0edbb2bea80d9475"
+  },
+  "docflow-ai/backend/docflow/pagination.py": {
+    "mtime": 1779924296.7651865,
+    "ast_hash": "7ab407600b9179efaace9a646791c548",
+    "semantic_hash": "7ab407600b9179efaace9a646791c548"
+  },
+  "docflow-ai/backend/docflow/settings.py": {
+    "mtime": 1780103126.1767066,
+    "ast_hash": "03495913d8d1fbbb42a94b7e581630fb",
+    "semantic_hash": "03495913d8d1fbbb42a94b7e581630fb"
+  },
+  "docflow-ai/backend/docflow/urls.py": {
+    "mtime": 1779918526.5423946,
+    "ast_hash": "659fc30c299dc597217ee3f5c0957dcc",
+    "semantic_hash": "659fc30c299dc597217ee3f5c0957dcc"
+  },
+  "docflow-ai/backend/docflow/wsgi.py": {
+    "mtime": 1779169645.1794546,
+    "ast_hash": "81cfee0ead7ff102a95b3e10fba36e5b",
+    "semantic_hash": "81cfee0ead7ff102a95b3e10fba36e5b"
+  },
+  "docflow-ai/backend/documents/__init__.py": {
+    "mtime": 1779908655.6621604,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/documents/admin.py": {
+    "mtime": 1780093608.2138267,
+    "ast_hash": "3c4efc18cd0958fcac55aa9d1673ef8a",
+    "semantic_hash": "3c4efc18cd0958fcac55aa9d1673ef8a"
+  },
+  "docflow-ai/backend/documents/apps.py": {
+    "mtime": 1779908655.6635258,
+    "ast_hash": "6f1b49354dffbe1c62382c1991b0f0f9",
+    "semantic_hash": "6f1b49354dffbe1c62382c1991b0f0f9"
+  },
+  "docflow-ai/backend/documents/docx_generator.py": {
+    "mtime": 1780092286.8467653,
+    "ast_hash": "d8e0ba2f8ead4e0e3327d733b1d9799f",
+    "semantic_hash": "d8e0ba2f8ead4e0e3327d733b1d9799f"
+  },
+  "docflow-ai/backend/documents/filters.py": {
+    "mtime": 1780092302.3719199,
+    "ast_hash": "2d28c894272f8ca253e0448e7636f625",
+    "semantic_hash": "2d28c894272f8ca253e0448e7636f625"
+  },
+  "docflow-ai/backend/documents/migrations/0001_initial.py": {
+    "mtime": 1780094040.1154501,
+    "ast_hash": "91febf947065a1697d4235e42ab3887e",
+    "semantic_hash": "91febf947065a1697d4235e42ab3887e"
+  },
+  "docflow-ai/backend/documents/migrations/0002_documentactivity_documentattachment_documentversion_and_more.py": {
+    "mtime": 1780094101.7379303,
+    "ast_hash": "ee3150e388ae6aac7f40257562d6f233",
+    "semantic_hash": "ee3150e388ae6aac7f40257562d6f233"
+  },
+  "docflow-ai/backend/documents/migrations/__init__.py": {
+    "mtime": 1779908655.6635258,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/documents/models.py": {
+    "mtime": 1780094051.6632721,
+    "ast_hash": "f7987700ee6dc6089818e098ddf3c097",
+    "semantic_hash": "f7987700ee6dc6089818e098ddf3c097"
+  },
+  "docflow-ai/backend/documents/pdf_generator.py": {
+    "mtime": 1780092267.1992188,
+    "ast_hash": "64c14584d014db4634dbb0c96849ce99",
+    "semantic_hash": "64c14584d014db4634dbb0c96849ce99"
+  },
+  "docflow-ai/backend/documents/serializers.py": {
+    "mtime": 1780090006.7972763,
+    "ast_hash": "8e819340018ef9b05462dcc63fb34a98",
+    "semantic_hash": "8e819340018ef9b05462dcc63fb34a98"
+  },
+  "docflow-ai/backend/documents/tasks.py": {
+    "mtime": 1780092258.3710387,
+    "ast_hash": "945bf27d4b66f96ed20dfcf949ac08ac",
+    "semantic_hash": "945bf27d4b66f96ed20dfcf949ac08ac"
+  },
+  "docflow-ai/backend/documents/tests.py": {
+    "mtime": 1779908655.662432,
+    "ast_hash": "465b7e9f69bfd158c850cdfbc7306818",
+    "semantic_hash": "465b7e9f69bfd158c850cdfbc7306818"
+  },
+  "docflow-ai/backend/documents/tests/conftest.py": {
+    "mtime": 1780093699.0709903,
+    "ast_hash": "76415c04398e13c7e5f78ad454152be2",
+    "semantic_hash": "76415c04398e13c7e5f78ad454152be2"
+  },
+  "docflow-ai/backend/documents/tests/factories.py": {
+    "mtime": 1780089329.9873743,
+    "ast_hash": "512f9475243399245fd2716b4126a9af",
+    "semantic_hash": "512f9475243399245fd2716b4126a9af"
+  },
+  "docflow-ai/backend/documents/tests/test_models.py": {
+    "mtime": 1780089250.5873098,
+    "ast_hash": "a5d560d53438f806e5e8c2abc56693ee",
+    "semantic_hash": "a5d560d53438f806e5e8c2abc56693ee"
+  },
+  "docflow-ai/backend/documents/tests/test_serializers.py": {
+    "mtime": 1780093746.8067722,
+    "ast_hash": "2fba0a0dfe1dcc93bc1e4a2005996dd9",
+    "semantic_hash": "2fba0a0dfe1dcc93bc1e4a2005996dd9"
+  },
+  "docflow-ai/backend/documents/tests/test_tasks.py": {
+    "mtime": 1780093765.9407601,
+    "ast_hash": "fd0b6f951e65cf92d62b6fc55b86498d",
+    "semantic_hash": "fd0b6f951e65cf92d62b6fc55b86498d"
+  },
+  "docflow-ai/backend/documents/urls.py": {
+    "mtime": 1780092312.842202,
+    "ast_hash": "b5f93b80d04c740c11765fa02246a51e",
+    "semantic_hash": "b5f93b80d04c740c11765fa02246a51e"
+  },
+  "docflow-ai/backend/documents/views.py": {
+    "mtime": 1780090025.8001695,
+    "ast_hash": "5c53a6823240ebd71b7532ca415f4698",
+    "semantic_hash": "5c53a6823240ebd71b7532ca415f4698"
+  },
+  "docflow-ai/backend/intergrations/__init__.py": {
+    "mtime": 1779902331.929987,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/intergrations/admin.py": {
+    "mtime": 1780104345.2441313,
+    "ast_hash": "84a5d9cef916d5f9e1cb9f61044dc94b",
+    "semantic_hash": "84a5d9cef916d5f9e1cb9f61044dc94b"
+  },
+  "docflow-ai/backend/intergrations/apps.py": {
+    "mtime": 1779902331.9318602,
+    "ast_hash": "7233596ab7d64f430f5f6be545aecea9",
+    "semantic_hash": "7233596ab7d64f430f5f6be545aecea9"
+  },
+  "docflow-ai/backend/intergrations/base.py": {
+    "mtime": 1780088921.3920047,
+    "ast_hash": "b978ae302c3c28904143b36f35b05268",
+    "semantic_hash": "b978ae302c3c28904143b36f35b05268"
+  },
+  "docflow-ai/backend/intergrations/google_drive.py": {
+    "mtime": 1780089137.9570131,
+    "ast_hash": "f3cdc43fff686d0fa0dea3b7c59ad9dd",
+    "semantic_hash": "f3cdc43fff686d0fa0dea3b7c59ad9dd"
+  },
+  "docflow-ai/backend/intergrations/migrations/0001_initial.py": {
+    "mtime": 1780104178.441043,
+    "ast_hash": "98caa8039a57c3ed0042f6bb121ea450",
+    "semantic_hash": "98caa8039a57c3ed0042f6bb121ea450"
+  },
+  "docflow-ai/backend/intergrations/migrations/__init__.py": {
+    "mtime": 1779902331.9318602,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/intergrations/models.py": {
+    "mtime": 1780104161.9715385,
+    "ast_hash": "49e385211cdbd6cbb30c63f65a6c3d64",
+    "semantic_hash": "49e385211cdbd6cbb30c63f65a6c3d64"
+  },
+  "docflow-ai/backend/intergrations/quickbooks.py": {
+    "mtime": 1780088943.7655957,
+    "ast_hash": "66556db21c0275bbceb7f0facd713468",
+    "semantic_hash": "66556db21c0275bbceb7f0facd713468"
+  },
+  "docflow-ai/backend/intergrations/slack_notifier.py": {
+    "mtime": 1780089120.2039444,
+    "ast_hash": "201fe0276204bcfc06a995e1f5fc8fd8",
+    "semantic_hash": "201fe0276204bcfc06a995e1f5fc8fd8"
+  },
+  "docflow-ai/backend/intergrations/tasks.py": {
+    "mtime": 1780095770.01899,
+    "ast_hash": "43b9b5194cff409b2fb957f425c9bf2a",
+    "semantic_hash": "43b9b5194cff409b2fb957f425c9bf2a"
+  },
+  "docflow-ai/backend/intergrations/tests.py": {
+    "mtime": 1779902331.9305098,
+    "ast_hash": "465b7e9f69bfd158c850cdfbc7306818",
+    "semantic_hash": "465b7e9f69bfd158c850cdfbc7306818"
+  },
+  "docflow-ai/backend/intergrations/tests/tests_integrations.py": {
+    "mtime": 1780101320.5706255,
+    "ast_hash": "cd89559ed5d0251984ce510e03aa9fa3",
+    "semantic_hash": "cd89559ed5d0251984ce510e03aa9fa3"
+  },
+  "docflow-ai/backend/intergrations/urls.py": {
+    "mtime": 1780089579.6860049,
+    "ast_hash": "9949382cb1c22b4e03e3f2b0172ff2da",
+    "semantic_hash": "9949382cb1c22b4e03e3f2b0172ff2da"
+  },
+  "docflow-ai/backend/intergrations/views.py": {
+    "mtime": 1780089668.5958638,
+    "ast_hash": "b6763da4f23189aad57a18fb210f3b01",
+    "semantic_hash": "b6763da4f23189aad57a18fb210f3b01"
+  },
+  "docflow-ai/backend/intergrations/xero.py": {
+    "mtime": 1780089108.0651758,
+    "ast_hash": "9b626645996d101d97da14ac637a168c",
+    "semantic_hash": "9b626645996d101d97da14ac637a168c"
+  },
+  "docflow-ai/backend/intergrations/zapier_webhooks.py": {
+    "mtime": 1780089521.912844,
+    "ast_hash": "200d6dda2661c10f25b6bbce90f7d035",
+    "semantic_hash": "200d6dda2661c10f25b6bbce90f7d035"
+  },
+  "docflow-ai/backend/manage.py": {
+    "mtime": 1779086412.1319578,
+    "ast_hash": "3592a603c9d908e92e9c995fb3b1cd26",
+    "semantic_hash": "3592a603c9d908e92e9c995fb3b1cd26"
+  },
+  "docflow-ai/backend/notifications/__init__.py": {
+    "mtime": 1779902426.5075076,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/notifications/admin.py": {
+    "mtime": 1780099585.1418655,
+    "ast_hash": "ed267b21ce0cd01834215f372b877b86",
+    "semantic_hash": "ed267b21ce0cd01834215f372b877b86"
+  },
+  "docflow-ai/backend/notifications/apps.py": {
+    "mtime": 1780099573.0574584,
+    "ast_hash": "3c965e22b8319361cba64d723abb0f84",
+    "semantic_hash": "3c965e22b8319361cba64d723abb0f84"
+  },
+  "docflow-ai/backend/notifications/email.py": {
+    "mtime": 1780100108.6247702,
+    "ast_hash": "f2b978d6253d120b6822e6fd7154efb6",
+    "semantic_hash": "f2b978d6253d120b6822e6fd7154efb6"
+  },
+  "docflow-ai/backend/notifications/migrations/0001_initial.py": {
+    "mtime": 1779916877.2642307,
+    "ast_hash": "2b5ba77a1b0a909be4ba2f392aaee10d",
+    "semantic_hash": "2b5ba77a1b0a909be4ba2f392aaee10d"
+  },
+  "docflow-ai/backend/notifications/migrations/__init__.py": {
+    "mtime": 1779902426.5086074,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/notifications/models.py": {
+    "mtime": 1780100055.9726038,
+    "ast_hash": "4fc10e70ee87bbd345d8a7cac82447ed",
+    "semantic_hash": "4fc10e70ee87bbd345d8a7cac82447ed"
+  },
+  "docflow-ai/backend/notifications/push.py": {
+    "mtime": 1780100138.1880774,
+    "ast_hash": "74b34b7fd0de9afbfbd6de92f14d5676",
+    "semantic_hash": "74b34b7fd0de9afbfbd6de92f14d5676"
+  },
+  "docflow-ai/backend/notifications/serializers.py": {
+    "mtime": 1780100079.329804,
+    "ast_hash": "bbf15aca372466158c42d056adf6f01b",
+    "semantic_hash": "bbf15aca372466158c42d056adf6f01b"
+  },
+  "docflow-ai/backend/notifications/tasks.py": {
+    "mtime": 1780103939.6387758,
+    "ast_hash": "396fc1729b768df4d29946ea34557078",
+    "semantic_hash": "396fc1729b768df4d29946ea34557078"
+  },
+  "docflow-ai/backend/notifications/tests/tests_notifications.py": {
+    "mtime": 1780101245.4637687,
+    "ast_hash": "7f07b1d9354a7f3b4431c7119814a705",
+    "semantic_hash": "7f07b1d9354a7f3b4431c7119814a705"
+  },
+  "docflow-ai/backend/notifications/urls.py": {
+    "mtime": 1779915835.3639283,
+    "ast_hash": "e1bc78ffbfbd7aa9ccbc9bb81a5ef223",
+    "semantic_hash": "e1bc78ffbfbd7aa9ccbc9bb81a5ef223"
+  },
+  "docflow-ai/backend/notifications/views.py": {
+    "mtime": 1780100091.155561,
+    "ast_hash": "916259a4928740d70fcb3f8d83c72f77",
+    "semantic_hash": "916259a4928740d70fcb3f8d83c72f77"
+  },
+  "docflow-ai/backend/signatures/__init__.py": {
+    "mtime": 1779902401.63413,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/signatures/admin.py": {
+    "mtime": 1779902401.63413,
+    "ast_hash": "e3dc717de887db03a015667a5fec59d8",
+    "semantic_hash": "e3dc717de887db03a015667a5fec59d8"
+  },
+  "docflow-ai/backend/signatures/apps.py": {
+    "mtime": 1779902401.635273,
+    "ast_hash": "bf9e52674eb02e7d9393d64780d15b9a",
+    "semantic_hash": "bf9e52674eb02e7d9393d64780d15b9a"
+  },
+  "docflow-ai/backend/signatures/dropbox_sign.py": {
+    "mtime": 1779903363.529995,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/signatures/migrations/__init__.py": {
+    "mtime": 1779902401.635273,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/signatures/models.py": {
+    "mtime": 1779902401.6338475,
+    "ast_hash": "8c4eb991c6dca757bdd77f539092e29b",
+    "semantic_hash": "8c4eb991c6dca757bdd77f539092e29b"
+  },
+  "docflow-ai/backend/signatures/tests.py": {
+    "mtime": 1779902401.634359,
+    "ast_hash": "465b7e9f69bfd158c850cdfbc7306818",
+    "semantic_hash": "465b7e9f69bfd158c850cdfbc7306818"
+  },
+  "docflow-ai/backend/signatures/views.py": {
+    "mtime": 1779902401.6340096,
+    "ast_hash": "f467fa232324ad139aaecd0df7698f3f",
+    "semantic_hash": "f467fa232324ad139aaecd0df7698f3f"
+  },
+  "docflow-ai/backend/users/__init__.py": {
+    "mtime": 1779002878.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/users/admin.py": {
+    "mtime": 1779905972.0073876,
+    "ast_hash": "eb6c2f69458e9ff62d3d528d8cb46c1b",
+    "semantic_hash": "eb6c2f69458e9ff62d3d528d8cb46c1b"
+  },
+  "docflow-ai/backend/users/apps.py": {
+    "mtime": 1779915116.7596555,
+    "ast_hash": "61f2d94de7571931cb82071ec31c5937",
+    "semantic_hash": "61f2d94de7571931cb82071ec31c5937"
+  },
+  "docflow-ai/backend/users/migrations/0001_initial.py": {
+    "mtime": 1779087776.5245223,
+    "ast_hash": "66f13e22391fce3efe53386bd9575a88",
+    "semantic_hash": "66f13e22391fce3efe53386bd9575a88"
+  },
+  "docflow-ai/backend/users/migrations/0002_emailverificationtoken_passwordresettoken_and_more.py": {
+    "mtime": 1779905979.7269726,
+    "ast_hash": "8b8c5c3036ea3fea28ee2ed4d51c5270",
+    "semantic_hash": "8b8c5c3036ea3fea28ee2ed4d51c5270"
+  },
+  "docflow-ai/backend/users/migrations/__init__.py": {
+    "mtime": 1779087776.5225403,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "docflow-ai/backend/users/models.py": {
+    "mtime": 1779903855.810855,
+    "ast_hash": "554d232290b8b139401988977a29bf68",
+    "semantic_hash": "554d232290b8b139401988977a29bf68"
+  },
+  "docflow-ai/backend/users/permissions.py": {
+    "mtime": 1779903903.7430096,
+    "ast_hash": "89525a7b6b493fc0bbf200c34a0c8a6e",
+    "semantic_hash": "89525a7b6b493fc0bbf200c34a0c8a6e"
+  },
+  "docflow-ai/backend/users/serializers.py": {
+    "mtime": 1779919177.7151332,
+    "ast_hash": "12c083db78f7787774efbd1420c7b39b",
+    "semantic_hash": "12c083db78f7787774efbd1420c7b39b"
+  },
+  "docflow-ai/backend/users/signals.py": {
+    "mtime": 1779915037.9855661,
+    "ast_hash": "aee572d199c80de1a8d0b93778bf6e50",
+    "semantic_hash": "aee572d199c80de1a8d0b93778bf6e50"
+  },
+  "docflow-ai/backend/users/tests.py": {
+    "mtime": 1779915061.908644,
+    "ast_hash": "8dcfafca72d692303ecc65c78ccab8db",
+    "semantic_hash": "8dcfafca72d692303ecc65c78ccab8db"
+  },
+  "docflow-ai/backend/users/urls.py": {
+    "mtime": 1779922759.3416953,
+    "ast_hash": "12210f4b802d49bac87179dc7e04dffd",
+    "semantic_hash": "12210f4b802d49bac87179dc7e04dffd"
+  },
+  "docflow-ai/backend/users/views.py": {
+    "mtime": 1780105270.1843274,
+    "ast_hash": "8b5b94fdb1803d328041a6805fcaf406",
+    "semantic_hash": "8b5b94fdb1803d328041a6805fcaf406"
+  },
+  "docflow-ai/create-win10-vm.sh": {
+    "mtime": 1779905759.6165144,
+    "ast_hash": "712fb4fc8a7961973a503cd527d58152",
+    "semantic_hash": "712fb4fc8a7961973a503cd527d58152"
+  },
+  "docflow-ai/docflow-infra/docker/settings_production.py": {
+    "mtime": 1779596649.0,
+    "ast_hash": "55c26d39d9f98dbaf18212494fb7acc8",
+    "semantic_hash": "55c26d39d9f98dbaf18212494fb7acc8"
+  },
+  "docflow-ai/docflow-infra/scripts/bootstrap.sh": {
+    "mtime": 1779596630.0,
+    "ast_hash": "132ae6e856c529142cce749bff3c80e5",
+    "semantic_hash": "132ae6e856c529142cce749bff3c80e5"
+  },
+  "docflow-ai/docflow-infra/scripts/deploy.sh": {
+    "mtime": 1779596615.0,
+    "ast_hash": "9f051cbe6787349eb8af226ee90b51e7",
+    "semantic_hash": "9f051cbe6787349eb8af226ee90b51e7"
+  },
+  "docflow-ai/docflow-infra/terraform/main.tf": {
+    "mtime": 1779596557.0,
+    "ast_hash": "fac4edfb641375b7a7fe69d8f0edc3f0",
+    "semantic_hash": "fac4edfb641375b7a7fe69d8f0edc3f0"
+  },
+  "docflow-ai/docflow-infra/terraform/outputs.tf": {
+    "mtime": 1779596583.0,
+    "ast_hash": "2133c54c43cccdd94f2c6511db4a87ed",
+    "semantic_hash": "2133c54c43cccdd94f2c6511db4a87ed"
+  },
+  "docflow-ai/docflow-infra/terraform/variables.tf": {
+    "mtime": 1779596577.0,
+    "ast_hash": "05634d7a233cb00b0d5925ee343657ac",
+    "semantic_hash": "05634d7a233cb00b0d5925ee343657ac"
+  },
+  "docflow-ai/scripts/bootstrap.sh": {
+    "mtime": 1779022765.0,
+    "ast_hash": "7f11dac2fbddf0932c3b146a03c254d0",
+    "semantic_hash": "7f11dac2fbddf0932c3b146a03c254d0"
+  },
+  "docflow-ai/scripts/init_db.sql": {
+    "mtime": 1779022754.0,
+    "ast_hash": "217b92ef2aa8162bcc88fc77c749acda",
+    "semantic_hash": "217b92ef2aa8162bcc88fc77c749acda"
+  },
+  "docflow-ai/web/package.json": {
+    "mtime": 1780102089.410603,
+    "ast_hash": "a52beccfd4cb30cdd388177e46490567",
+    "semantic_hash": "a52beccfd4cb30cdd388177e46490567"
+  },
+  "docflow-ai/web/src/App.js": {
+    "mtime": 1780101612.7112029,
+    "ast_hash": "806306d62910dc301cdc7a4c880421c1",
+    "semantic_hash": "806306d62910dc301cdc7a4c880421c1"
+  },
+  "docflow-ai/web/src/App.tsx": {
+    "mtime": 1779919687.6705723,
+    "ast_hash": "96be8ec29071fae31e171fd1fa29dc4d",
+    "semantic_hash": "96be8ec29071fae31e171fd1fa29dc4d"
+  },
+  "docflow-ai/web/src/components/Verify2FA.js": {
+    "mtime": 1780101612.7159717,
+    "ast_hash": "7ba7cc8e3e964c0077a8ad5b80021f8d",
+    "semantic_hash": "7ba7cc8e3e964c0077a8ad5b80021f8d"
+  },
+  "docflow-ai/web/src/components/Verify2FA.tsx": {
+    "mtime": 1780101822.7306905,
+    "ast_hash": "7713b3cd95d7c4e522f7be9b57e4a0be",
+    "semantic_hash": "7713b3cd95d7c4e522f7be9b57e4a0be"
+  },
+  "docflow-ai/web/src/components/layout/AppLayout.js": {
+    "mtime": 1780101612.7082026,
+    "ast_hash": "2585191615c97d586cc553e197fb7fb6",
+    "semantic_hash": "2585191615c97d586cc553e197fb7fb6"
+  },
+  "docflow-ai/web/src/components/layout/AppLayout.tsx": {
+    "mtime": 1779207032.43775,
+    "ast_hash": "2ee8f880057d13b2d72560ba83590904",
+    "semantic_hash": "2ee8f880057d13b2d72560ba83590904"
+  },
+  "docflow-ai/web/src/lib/api.js": {
+    "mtime": 1780101612.5050182,
+    "ast_hash": "2ccb59ee01b444792cf34a15cb6f7b9d",
+    "semantic_hash": "2ccb59ee01b444792cf34a15cb6f7b9d"
+  },
+  "docflow-ai/web/src/lib/api.ts": {
+    "mtime": 1780101905.6840048,
+    "ast_hash": "2dbc5c6c58fde3d6eb0c89876a43c04a",
+    "semantic_hash": "2dbc5c6c58fde3d6eb0c89876a43c04a"
+  },
+  "docflow-ai/web/src/lib/auth-store.js": {
+    "mtime": 1780101612.512196,
+    "ast_hash": "0c21b01343e38eb5b8690275e2b37a7d",
+    "semantic_hash": "0c21b01343e38eb5b8690275e2b37a7d"
+  },
+  "docflow-ai/web/src/lib/auth-store.ts": {
+    "mtime": 1779921742.0507493,
+    "ast_hash": "45aec9b122bd3ca6cf7d1ea61505ba37",
+    "semantic_hash": "45aec9b122bd3ca6cf7d1ea61505ba37"
+  },
+  "docflow-ai/web/src/lib/utils.js": {
+    "mtime": 1780101612.5561976,
+    "ast_hash": "81fb257c17f6b2f411bc183639191631",
+    "semantic_hash": "81fb257c17f6b2f411bc183639191631"
+  },
+  "docflow-ai/web/src/lib/utils.ts": {
+    "mtime": 1779003232.0,
+    "ast_hash": "8b4c342c7761c0753c1d4856d9679007",
+    "semantic_hash": "8b4c342c7761c0753c1d4856d9679007"
+  },
+  "docflow-ai/web/src/main.js": {
+    "mtime": 1780101612.7122028,
+    "ast_hash": "2ae277d0f3d8192a3f98cd6f58ad9e9e",
+    "semantic_hash": "2ae277d0f3d8192a3f98cd6f58ad9e9e"
+  },
+  "docflow-ai/web/src/main.tsx": {
+    "mtime": 1779022703.0,
+    "ast_hash": "87a14170fb160b764721b7e71785aa8c",
+    "semantic_hash": "87a14170fb160b764721b7e71785aa8c"
+  },
+  "docflow-ai/web/src/pages/AiReviewPage.js": {
+    "mtime": 1780101612.6782017,
+    "ast_hash": "572cbbb8e99820d5480a662714883e5e",
+    "semantic_hash": "572cbbb8e99820d5480a662714883e5e"
+  },
+  "docflow-ai/web/src/pages/AiReviewPage.tsx": {
+    "mtime": 1779618653.8712025,
+    "ast_hash": "6302443d1a8fa3ff1a86866f1a52032e",
+    "semantic_hash": "6302443d1a8fa3ff1a86866f1a52032e"
+  },
+  "docflow-ai/web/src/pages/BillingPage.js": {
+    "mtime": 1780101612.6999633,
+    "ast_hash": "59c12a4e757fc3a6afd4e68ab0ec6512",
+    "semantic_hash": "59c12a4e757fc3a6afd4e68ab0ec6512"
+  },
+  "docflow-ai/web/src/pages/BillingPage.tsx": {
+    "mtime": 1779206861.0202138,
+    "ast_hash": "39beb2c12e921ce2c6e53aac6ea2d7c1",
+    "semantic_hash": "39beb2c12e921ce2c6e53aac6ea2d7c1"
+  },
+  "docflow-ai/web/src/pages/ClientPortalPage.js": {
+    "mtime": 1780101612.705188,
+    "ast_hash": "fb36a87a8df21caf48700e47aaea4402",
+    "semantic_hash": "fb36a87a8df21caf48700e47aaea4402"
+  },
+  "docflow-ai/web/src/pages/ClientPortalPage.tsx": {
+    "mtime": 1779923869.0676572,
+    "ast_hash": "5235aa33155d32531b7dab9da155db08",
+    "semantic_hash": "5235aa33155d32531b7dab9da155db08"
+  },
+  "docflow-ai/web/src/pages/ClientsPage.js": {
+    "mtime": 1780101612.684202,
+    "ast_hash": "167796a07a300850c26fe537a9a1bd15",
+    "semantic_hash": "167796a07a300850c26fe537a9a1bd15"
+  },
+  "docflow-ai/web/src/pages/ClientsPage.tsx": {
+    "mtime": 1779924681.742135,
+    "ast_hash": "3280c4263860d84c6ef72ff2b20e6524",
+    "semantic_hash": "3280c4263860d84c6ef72ff2b20e6524"
+  },
+  "docflow-ai/web/src/pages/ContractsPage.js": {
+    "mtime": 1780101612.6711898,
+    "ast_hash": "9cdefd58d55c1d9a97302de5d5083103",
+    "semantic_hash": "9cdefd58d55c1d9a97302de5d5083103"
+  },
+  "docflow-ai/web/src/pages/ContractsPage.tsx": {
+    "mtime": 1779206722.8831582,
+    "ast_hash": "f6ead74358b0ca32dc6af0dc3a8dc1c6",
+    "semantic_hash": "f6ead74358b0ca32dc6af0dc3a8dc1c6"
+  },
+  "docflow-ai/web/src/pages/DashboardPage.js": {
+    "mtime": 1780101612.5649114,
+    "ast_hash": "5b9607285b34c409f296e474cefab8fc",
+    "semantic_hash": "5b9607285b34c409f296e474cefab8fc"
+  },
+  "docflow-ai/web/src/pages/DashboardPage.tsx": {
+    "mtime": 1779923235.0547316,
+    "ast_hash": "71e815baef2d70c2d23399faac604a6d",
+    "semantic_hash": "71e815baef2d70c2d23399faac604a6d"
+  },
+  "docflow-ai/web/src/pages/ForgotPasswordPage.js": {
+    "mtime": 1780101612.551112,
+    "ast_hash": "771fddc41aba5ec80bfce1cc29b7f92c",
+    "semantic_hash": "771fddc41aba5ec80bfce1cc29b7f92c"
+  },
+  "docflow-ai/web/src/pages/ForgotPasswordPage.tsx": {
+    "mtime": 1779789283.8046372,
+    "ast_hash": "43f9b2842395659bc6db871a4a6a9ffc",
+    "semantic_hash": "43f9b2842395659bc6db871a4a6a9ffc"
+  },
+  "docflow-ai/web/src/pages/InvoiceEditorPage.js": {
+    "mtime": 1780101612.5992172,
+    "ast_hash": "3b38b55f3208067d2f128fa5841d4571",
+    "semantic_hash": "3b38b55f3208067d2f128fa5841d4571"
+  },
+  "docflow-ai/web/src/pages/InvoiceEditorPage.tsx": {
+    "mtime": 1779928074.8386986,
+    "ast_hash": "8ee9db39cedafce78c474d5f731115d9",
+    "semantic_hash": "8ee9db39cedafce78c474d5f731115d9"
+  },
+  "docflow-ai/web/src/pages/InvoicesPage.js": {
+    "mtime": 1780101612.5748527,
+    "ast_hash": "dad6ff02e4f895c1ff6875f5af0eb941",
+    "semantic_hash": "dad6ff02e4f895c1ff6875f5af0eb941"
+  },
+  "docflow-ai/web/src/pages/InvoicesPage.tsx": {
+    "mtime": 1779925180.9333465,
+    "ast_hash": "691806802075c4cdd886a0f077e8b2ef",
+    "semantic_hash": "691806802075c4cdd886a0f077e8b2ef"
+  },
+  "docflow-ai/web/src/pages/LoginPage.js": {
+    "mtime": 1780101612.5371969,
+    "ast_hash": "954e8664ac33dea29235c73dd296ed18",
+    "semantic_hash": "954e8664ac33dea29235c73dd296ed18"
+  },
+  "docflow-ai/web/src/pages/LoginPage.tsx": {
+    "mtime": 1779921679.123842,
+    "ast_hash": "7828995ad92ce2b65dcf58c597d387b0",
+    "semantic_hash": "7828995ad92ce2b65dcf58c597d387b0"
+  },
+  "docflow-ai/web/src/pages/PasswordResetConfirmPage.js": {
+    "mtime": 1780101612.5541975,
+    "ast_hash": "327b2d0bb0c2a571bfbd19101ddd333b",
+    "semantic_hash": "327b2d0bb0c2a571bfbd19101ddd333b"
+  },
+  "docflow-ai/web/src/pages/PasswordResetConfirmPage.tsx": {
+    "mtime": 1779291882.4817023,
+    "ast_hash": "2115ccdd85a60ff2e2ab6a3da97a26a0",
+    "semantic_hash": "2115ccdd85a60ff2e2ab6a3da97a26a0"
+  },
+  "docflow-ai/web/src/pages/QuotationEditorPage.js": {
+    "mtime": 1780101612.6672013,
+    "ast_hash": "4163e8fd4a09e66cd99b7ccca0f04277",
+    "semantic_hash": "4163e8fd4a09e66cd99b7ccca0f04277"
+  },
+  "docflow-ai/web/src/pages/QuotationEditorPage.tsx": {
+    "mtime": 1779928062.8938982,
+    "ast_hash": "e7214604e914bfc1b2279b93187c6430",
+    "semantic_hash": "e7214604e914bfc1b2279b93187c6430"
+  },
+  "docflow-ai/web/src/pages/QuotationsPage.js": {
+    "mtime": 1780101612.6442006,
+    "ast_hash": "9248fa124b485e75c90a01a122f46a16",
+    "semantic_hash": "9248fa124b485e75c90a01a122f46a16"
+  },
+  "docflow-ai/web/src/pages/QuotationsPage.tsx": {
+    "mtime": 1780071538.4750974,
+    "ast_hash": "c3b4effd07a2a37b2857b694809bef74",
+    "semantic_hash": "c3b4effd07a2a37b2857b694809bef74"
+  },
+  "docflow-ai/web/src/pages/RegisterPage.js": {
+    "mtime": 1780101612.5465608,
+    "ast_hash": "da5d0c4db822f8d6edb06491d0823728",
+    "semantic_hash": "da5d0c4db822f8d6edb06491d0823728"
+  },
+  "docflow-ai/web/src/pages/RegisterPage.tsx": {
+    "mtime": 1779790038.5425599,
+    "ast_hash": "8ff8a98b7b61adabb8cb514232e0ed78",
+    "semantic_hash": "8ff8a98b7b61adabb8cb514232e0ed78"
+  },
+  "docflow-ai/web/src/pages/ResetPasswordConfirmPage.js": {
+    "mtime": 1780101612.720765,
+    "ast_hash": "ecf1d936e18c8865f075e6a949a593ef",
+    "semantic_hash": "ecf1d936e18c8865f075e6a949a593ef"
+  },
+  "docflow-ai/web/src/pages/ResetPasswordConfirmPage.tsx": {
+    "mtime": 1779911772.1819992,
+    "ast_hash": "b3d39a43da323e496065f9705fa38bca",
+    "semantic_hash": "b3d39a43da323e496065f9705fa38bca"
+  },
+  "docflow-ai/web/src/pages/SettingsPage.js": {
+    "mtime": 1780101612.6972775,
+    "ast_hash": "dca544f161bc5340cb45849996857e5c",
+    "semantic_hash": "dca544f161bc5340cb45849996857e5c"
+  },
+  "docflow-ai/web/src/pages/SettingsPage.tsx": {
+    "mtime": 1779789436.6927896,
+    "ast_hash": "34e729ff177d5e1804938e723aa80dbe",
+    "semantic_hash": "34e729ff177d5e1804938e723aa80dbe"
+  },
+  "docflow-ai/web/staticfiles/frontend/assets/index-B84MDJRR.js": {
+    "mtime": 1780102199.767622,
+    "ast_hash": "39767d2041735df6aa0f4d321c2c2ecb",
+    "semantic_hash": "39767d2041735df6aa0f4d321c2c2ecb"
+  },
+  "docflow-ai/web/staticfiles/frontend/assets/index-BLBGJkvT.js": {
+    "mtime": 1780102444.9653902,
+    "ast_hash": "39767d2041735df6aa0f4d321c2c2ecb",
+    "semantic_hash": "39767d2041735df6aa0f4d321c2c2ecb"
+  },
+  "docflow-ai/web/tsconfig.json": {
+    "mtime": 1779920081.2942727,
+    "ast_hash": "ea3fd7177e7a7cb986243fa150e4a690",
+    "semantic_hash": "ea3fd7177e7a7cb986243fa150e4a690"
+  },
+  "docflow-ai/web/tsconfig.node.json": {
+    "mtime": 1779090448.711434,
+    "ast_hash": "e173a8e6a614ec0c57f10d1addb6181f",
+    "semantic_hash": "e173a8e6a614ec0c57f10d1addb6181f"
+  },
+  "docflow-ai/web/vite.config.ts": {
+    "mtime": 1780101990.4310148,
+    "ast_hash": "201b3a0944c1fb68cd2385acc8f4af3d",
+    "semantic_hash": "201b3a0944c1fb68cd2385acc8f4af3d"
+  }
+}
